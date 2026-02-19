@@ -10,7 +10,51 @@ It does **not** read or modify game memory.
 
 ---
 
-## ⚠️ Important Notice
+# Requirements
+
+## System
+
+- Windows 10 / 11
+- Final Fantasy VIII (Steam PC or Remastered)
+- Game set to **Borderless Windowed** (recommended)
+    - Exclusive fullscreen may block simulated input.
+
+---
+
+## Python
+
+- Python 3.9+
+- Required package:
+
+```bash
+pip install pydirectinput
+```
+
+---
+# Keyboard Control Configuration
+
+This script assumes specific keyboard bindings inside Final Fantasy VIII.
+
+If your controls differ, you must either:
+- Rebind your in-game controls to match below, or  
+- Modify the script to match your layout.
+
+---
+
+## Required Keybinds
+
+The following mappings are assumed:
+
+| Script Key | In-Game Function        |
+|------------|------------------------|
+| `Enter`    | Confirm / Select       |
+| `C`        | Cancel / Back          |
+| `Up`       | Menu Navigation Up     |
+| `Down`     | Menu Navigation Down   |
+| `Left`     | Menu Navigation Left   |
+| `Right`    | Menu Navigation Right  |
+
+## ⚠️ Operational Notice
 
 These scripts perform deterministic, hard-coded menu navigation.  
 They assume exact menu positioning and predictable item ordering.
@@ -38,28 +82,6 @@ This project assumes a working knowledge of:
 - Installing and managing Python packages  
 - Editing source code safely  
 
-> **If you are not comfortable reviewing and modifying Python code, this tool is not recommended for you.**
+**If you are not comfortable reviewing and modifying Python code, this tool is not recommended for you.**
 
-> **Use at your own discretion.**
-
----
-
-# Requirements
-
-## System
-
-- Windows 10 / 11
-- Final Fantasy VIII (Steam PC or Remastered)
-- Game set to **Borderless Windowed** (recommended)
-    - Exclusive fullscreen may block simulated input.
-
----
-
-## Python
-
-- Python 3.9+
-- Required package:
-
-```bash
-pip install pydirectinput
-```
+**Use at your own discretion.**

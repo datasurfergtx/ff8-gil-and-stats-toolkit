@@ -37,8 +37,14 @@
 import time
 import pydirectinput as pdi
 
-# Give yourself time to click back into FF8
-time.sleep(5)
+# ----------------------------
+# CONFIG
+# ----------------------------
+FOCUS_GRACE_SECONDS = 5  # time to click back into FF8 after starting script
+pdi.PAUSE = 0.02 # Remove built-in delay
+
+print(f"Click into FF8 now. Starting in {FOCUS_GRACE_SECONDS} seconds...")
+time.sleep(FOCUS_GRACE_SECONDS)
 
 # ============================================================
 # PHASE 1 — SHOP + MED-RF LOOP (run 10 cycles)
@@ -51,30 +57,32 @@ for cycle in range(10):
     # ------------------------------------------------------------
 
     pdi.press('right')
+    time.sleep(0.1)
     for i in range(4):
         pdi.press('down')
     pdi.press('enter')
-
-    pdi.keyDown('up')
-    time.sleep(1.01)
-    pdi.keyUp('up')
+    for i in range(10):
+        pdi.press('up')
     pdi.press('enter')
 
     # Exit back out of shop menus
     pdi.press('c')
-    pdi.press('c')
     time.sleep(0.4)
     pdi.press('c')
+    time.sleep(0.65)
+    pdi.press('c')
+    time.sleep(0.4)
 
     # ------------------------------------------------------------
     # PHASE 1.2 — REFINE GIANT'S RINGS → GAEA'S RINGS (GFAbl Med-RF)
     # ------------------------------------------------------------
 
     pdi.press('right')
+    time.sleep(0.1)
     for i in range(5):
         pdi.press('down')
     pdi.press('enter')
-    time.sleep(0.4)
+    time.sleep(0.65)
     pdi.press('enter')
     pdi.press('down')
     pdi.press('enter')
@@ -84,14 +92,17 @@ for cycle in range(10):
     # ------------------------------------------------------------
 
     pdi.press('c')
-    time.sleep(0.4)
+    time.sleep(0.65)
     pdi.press('left')
+    time.sleep(0.1)
     for i in range(5):
         pdi.press('up')
     pdi.press('enter')
-    pdi.press('enter')
     time.sleep(0.4)
     pdi.press('enter')
+    time.sleep(0.65)
+    pdi.press('enter')
+    time.sleep(0.4)
 
 # ============================================================
 # PHASE 2 — FINAL REFINE (run once after batching)
@@ -100,19 +111,21 @@ for cycle in range(10):
 
 # Navigate to Forbid Med-RF
 pdi.press('c')
-pdi.press('c')
 time.sleep(0.4)
 pdi.press('c')
+time.sleep(0.65)
+pdi.press('c')
+time.sleep(0.4)
 pdi.press('right')
+time.sleep(0.1)
 for i in range(3):
     pdi.press('down')
 pdi.press('enter')
-time.sleep(0.4)
+time.sleep(0.65)
 
-# Refine to HP Up (hard-coded offsets)
+# Refine to HP Up
 pdi.press('down')
 pdi.press('enter')
-pdi.keyDown('down')
-time.sleep(1.01)
-pdi.keyUp('down')
+for i in range(10):
+    pdi.press('down')
 pdi.press('enter')

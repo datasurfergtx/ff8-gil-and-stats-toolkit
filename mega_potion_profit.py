@@ -37,7 +37,7 @@ import pydirectinput as pdi
 pdi.PAUSE = 0.02 # Remove built-in delay
 MAX_GIL = 99_999_999
 PROFIT_PER_CYCLE = 352_500
-SECONDS_PER_CYCLE = 17.3818
+SECONDS_PER_CYCLE = 11.77
 FOCUS_GRACE_SECONDS = 5  # time to click back into FF8 after starting script
 MIN_START_GIL = 210_000  # required to buy 100x Cottages + 100x Tents per cycle
 
@@ -212,7 +212,7 @@ time.sleep(FOCUS_GRACE_SECONDS)
 # ============================================================
 run_start_monotonic = time.perf_counter()
 
-for i in range(cycles):
+for cycle_num in range(1, cycles + 1):
     cycle_start = time.perf_counter()
 
     # ============================================================
@@ -314,8 +314,10 @@ for i in range(cycles):
     cycle_seconds = cycle_end - cycle_start
     elapsed = timedelta(seconds=(cycle_end - run_start_monotonic))
 
-    # Single line per cycle
-    print(f"Cycle: {i+1}/{cycles} ({cycle_seconds:.2f}s) | Elapsed: {format_elapsed(elapsed)}")
+    print(
+        f"Cycle: {cycle_num}/{cycles} ({cycle_seconds:.2f}s) | "
+        f"Elapsed: {format_elapsed(elapsed)}"
+    )
 
 # ----------------------------
 # FINISH LOGGING

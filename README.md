@@ -33,7 +33,7 @@ pip install pydirectinput
 ---
 # Keyboard Control Configuration
 
-This script assumes specific keyboard bindings inside Final Fantasy VIII.
+This toolkit assumes specific keyboard bindings inside Final Fantasy VIII.
 
 If your controls differ, you must either:
 - Rebind your in-game controls to match below, or  
@@ -45,14 +45,16 @@ If your controls differ, you must either:
 
 The following mappings are assumed:
 
-| Script Key | In-Game Function        |
-|------------|------------------------|
-| `Enter`    | Confirm / Select       |
-| `C`        | Cancel / Back          |
-| `Up`       | Menu Navigation Up     |
-| `Down`     | Menu Navigation Down   |
-| `Left`     | Menu Navigation Left   |
-| `Right`    | Menu Navigation Right  |
+| Script Key | In-Game Function         |
+|------------|--------------------------|
+| `Enter`    | Confirm / Select         |
+| `C`        | Cancel / Back            |
+| `Up`       | Menu Navigation Up       |
+| `Down`     | Menu Navigation Down     |
+| `Left`     | Menu Navigation Left     |
+| `Right`    | Menu Navigation Right    |
+
+---
 
 ## ⚠️ Operational Notice
 
@@ -64,23 +66,24 @@ inputs will desynchronize and may result in unintended purchases, item loss, or 
 
 These scripts:
 
-- Run in continuous `while` loops  
-- **Do not auto-terminate**  
-- Do not validate game state  
-- Do not perform safety checks  
+- Run a **finite number of cycles** using a `for` loop (based on your input/config)
+- **Auto-terminate** after completing the calculated number of cycles
+- Do not validate game state
+- Do not read game memory
+- Do not perform safety checks against desync
 
 You are fully responsible for:
 
-- Ensuring correct in-game setup before execution  
-- Monitoring script behavior while running  
-- Stopping execution manually (CTRL + C or terminating the process)  
-- Modifying timing values or keybinds if necessary  
+- Ensuring correct in-game setup before execution
+- Monitoring script behavior while running
+- Stopping execution manually if needed (CTRL + C or terminating the process)
+- Modifying timing values or keybinds if necessary
 
 This project assumes a working knowledge of:
 
-- Python execution from the command line  
-- Installing and managing Python packages  
-- Editing source code safely  
+- Python execution from the command line
+- Installing and managing Python packages
+- Editing source code safely
 
 **If you are not comfortable reviewing and modifying Python code, this tool is not recommended for you.**
 

@@ -45,7 +45,7 @@ while True:
 
     # Buy 100 Cottages
     pdi.keyDown('up')
-    time.sleep(1.02)
+    time.sleep(1.01)
     pdi.keyUp('up')
     pdi.press('enter')
     pdi.press('up')
@@ -53,14 +53,14 @@ while True:
 
     # Buy 100 Tents
     pdi.keyDown('up')
-    time.sleep(1.02)
+    time.sleep(1.01)
     pdi.keyUp('up')
     pdi.press('enter')
 
     # Exit Buy menu
     pdi.press('c')
     pdi.press('c')
-    time.sleep(0.5)
+    time.sleep(0.4)
 
     # ============================================================
     # PHASE 2 — REFINE ITEMS → MEGA POTIONS
@@ -71,12 +71,12 @@ while True:
     pdi.press('right')
     pdi.press('up')
     pdi.press('enter')
-    time.sleep(0.5)
+    time.sleep(0.4)
     pdi.press('enter')
 
     # Refine Tents → 25x Mega Potions
     pdi.keyDown('down')
-    time.sleep(0.5)
+    time.sleep(0.3)
     pdi.keyUp('down')
     pdi.press('enter')
     pdi.press('down')
@@ -84,13 +84,13 @@ while True:
 
     # Refine Cottages → 75x Mega Potions
     pdi.keyDown('down')
-    time.sleep(0.8)
+    time.sleep(0.5)
     pdi.keyUp('down')
     pdi.press('enter')
 
     # Exit Recov Med-RF
     pdi.press('c')
-    time.sleep(0.5)
+    time.sleep(0.4)
 
     # ============================================================
     # PHASE 3 — SELL MEGA POTIONS
@@ -101,19 +101,18 @@ while True:
     pdi.press('down')
     pdi.press('enter')
     pdi.press('enter')
-    time.sleep(0.5)
+    time.sleep(0.4)
 
     # Move to Mega Potions
     pdi.press('right')
     pdi.press('enter')
-    time.sleep(0.2)
     pdi.press('down')
     pdi.press('down')
     pdi.press('enter')
 
     # Sell 75x Mega Potions
     pdi.keyDown('up')
-    time.sleep(0.9)
+    time.sleep(0.8)
     pdi.keyUp('up')
     pdi.press('enter')
 

@@ -37,7 +37,7 @@ import pydirectinput as pdi
 pdi.PAUSE = 0.02 # Remove built-in delay
 MAX_GIL = 99_999_999
 PROFIT_PER_CYCLE = 352_500
-SECONDS_PER_CYCLE = 11.77
+SECONDS_PER_CYCLE = 12.6355
 FOCUS_GRACE_SECONDS = 5  # time to click back into FF8 after starting script
 MIN_START_GIL = 210_000  # required to buy 100x Cottages + 100x Tents per cycle
 
@@ -221,10 +221,11 @@ for cycle_num in range(1, cycles + 1):
 
     # Navigate to Tents & Cottages
     pdi.press("right")
-    time.sleep(0.1)
+    time.sleep(0.2)
     pdi.press("up")
     pdi.press("up")
     pdi.press("enter")
+    time.sleep(0.1)
 
     # Buy 100 Cottages
     for i in range(10):
@@ -232,6 +233,7 @@ for cycle_num in range(1, cycles + 1):
     pdi.press("enter")
     pdi.press("up")
     pdi.press("enter")
+    time.sleep(0.1)
 
     # Buy 100 Tents
     for i in range(10):
@@ -252,11 +254,12 @@ for cycle_num in range(1, cycles + 1):
     pdi.press("c")
     time.sleep(0.4)
     pdi.press("right")
-    time.sleep(0.1)
+    time.sleep(0.2)
     pdi.press("up")
     pdi.press("enter")
     time.sleep(0.65)
     pdi.press("enter")
+    time.sleep(0.15)
 
     # Refine Tents → 25x Mega Potions
     for i in range(3):
@@ -264,6 +267,7 @@ for cycle_num in range(1, cycles + 1):
     pdi.press("enter")
     pdi.press("down")
     pdi.press("enter")
+    time.sleep(0.15)
 
     # Refine Cottages → 75x Mega Potions
     for i in range(5):
@@ -280,7 +284,7 @@ for cycle_num in range(1, cycles + 1):
 
     # Navigate to Call Shop → Esthar Shop!!!
     pdi.press("left")
-    time.sleep(0.1)
+    time.sleep(0.2)
     pdi.press("down")
     pdi.press("enter")
     time.sleep(0.4)
@@ -294,6 +298,7 @@ for cycle_num in range(1, cycles + 1):
     pdi.press("down")
     pdi.press("down")
     pdi.press("enter")
+    time.sleep(0.1)
 
     # Sell 75x Mega Potions
     for i in range(8):

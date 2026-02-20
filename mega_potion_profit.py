@@ -196,93 +196,93 @@ for i in range(cycles):
     # Optional progress log
     log_line("Cycle:", f"{i+1}/{cycles}")
 
-    # # ============================================================
-    # # PHASE 1 — BUY TENTS & COTTAGES
-    # # ============================================================
+    # ============================================================
+    # PHASE 1 — BUY TENTS & COTTAGES
+    # ============================================================
 
-    # # Navigate to Tents & Cottages
-    # pdi.press('right')
-    # pdi.press('up')
-    # pdi.press('up')
-    # pdi.press('enter')
+    # Navigate to Tents & Cottages
+    pdi.press('right')
+    pdi.press('up')
+    pdi.press('up')
+    pdi.press('enter')
 
-    # # Buy 100 Cottages
-    # pdi.keyDown('up')
-    # time.sleep(1.01)
-    # pdi.keyUp('up')
-    # pdi.press('enter')
-    # pdi.press('up')
-    # pdi.press('enter')
+    # Buy 100 Cottages
+    pdi.keyDown('up')
+    time.sleep(1.01)
+    pdi.keyUp('up')
+    pdi.press('enter')
+    pdi.press('up')
+    pdi.press('enter')
 
-    # # Buy 100 Tents
-    # pdi.keyDown('up')
-    # time.sleep(1.01)
-    # pdi.keyUp('up')
-    # pdi.press('enter')
+    # Buy 100 Tents
+    pdi.keyDown('up')
+    time.sleep(1.01)
+    pdi.keyUp('up')
+    pdi.press('enter')
 
-    # # Exit Buy menu
-    # pdi.press('c')
-    # pdi.press('c')
-    # time.sleep(0.4)
+    # Exit Buy menu
+    pdi.press('c')
+    pdi.press('c')
+    time.sleep(0.4)
 
-    # # ============================================================
-    # # PHASE 2 — REFINE ITEMS → MEGA POTIONS
-    # # ============================================================
+    # ============================================================
+    # PHASE 2 — REFINE ITEMS → MEGA POTIONS
+    # ============================================================
 
-    # # Navigate to Recov Med-RF
-    # pdi.press('c')
-    # pdi.press('right')
-    # pdi.press('up')
-    # pdi.press('enter')
-    # time.sleep(0.4)
-    # pdi.press('enter')
+    # Navigate to Recov Med-RF
+    pdi.press('c')
+    pdi.press('right')
+    pdi.press('up')
+    pdi.press('enter')
+    time.sleep(0.4)
+    pdi.press('enter')
 
-    # # Refine Tents → 25x Mega Potions
-    # pdi.keyDown('down')
-    # time.sleep(0.3)
-    # pdi.keyUp('down')
-    # pdi.press('enter')
-    # pdi.press('down')
-    # pdi.press('enter')
+    # Refine Tents → 25x Mega Potions
+    pdi.keyDown('down')
+    time.sleep(0.3)
+    pdi.keyUp('down')
+    pdi.press('enter')
+    pdi.press('down')
+    pdi.press('enter')
 
-    # # Refine Cottages → 75x Mega Potions
-    # pdi.keyDown('down')
-    # time.sleep(0.5)
-    # pdi.keyUp('down')
-    # pdi.press('enter')
+    # Refine Cottages → 75x Mega Potions
+    pdi.keyDown('down')
+    time.sleep(0.5)
+    pdi.keyUp('down')
+    pdi.press('enter')
 
-    # # Exit Recov Med-RF
-    # pdi.press('c')
-    # time.sleep(0.4)
+    # Exit Recov Med-RF
+    pdi.press('c')
+    time.sleep(0.4)
 
-    # # ============================================================
-    # # PHASE 3 — SELL MEGA POTIONS
-    # # ============================================================
+    # ============================================================
+    # PHASE 3 — SELL MEGA POTIONS
+    # ============================================================
 
-    # # Navigate to Call Shop → Esthar Shop!!!
-    # pdi.press('left')
-    # pdi.press('down')
-    # pdi.press('enter')
-    # pdi.press('enter')
-    # time.sleep(0.4)
+    # Navigate to Call Shop → Esthar Shop!!!
+    pdi.press('left')
+    pdi.press('down')
+    pdi.press('enter')
+    pdi.press('enter')
+    time.sleep(0.4)
 
-    # # Move to Mega Potions
-    # pdi.press('right')
-    # pdi.press('enter')
-    # pdi.press('down')
-    # pdi.press('down')
-    # pdi.press('enter')
+    # Move to Mega Potions
+    pdi.press('right')
+    pdi.press('enter')
+    pdi.press('down')
+    pdi.press('down')
+    pdi.press('enter')
 
-    # # Sell 75x Mega Potions
-    # pdi.keyDown('up')
-    # time.sleep(0.8)
-    # pdi.keyUp('up')
-    # pdi.press('enter')
+    # Sell 75x Mega Potions
+    pdi.keyDown('up')
+    time.sleep(0.8)
+    pdi.keyUp('up')
+    pdi.press('enter')
 
-    # # Exit Sell
-    # pdi.press('c')
-    # pdi.press('left')
-    # pdi.press('enter')
+    # Exit Sell
+    pdi.press('c')
+    pdi.press('left')
+    pdi.press('enter')
 
 # ----------------------------
 # FINISH LOGGING

@@ -34,6 +34,7 @@ import pydirectinput as pdi
 # ----------------------------
 # CONFIG
 # ----------------------------
+pdi.PAUSE = 0.02 # Remove built-in delay
 MAX_GIL = 99_999_999
 PROFIT_PER_CYCLE = 352_500
 SECONDS_PER_CYCLE = 17.3818
@@ -220,28 +221,28 @@ for i in range(cycles):
 
     # Navigate to Tents & Cottages
     pdi.press("right")
+    time.sleep(0.1)
     pdi.press("up")
     pdi.press("up")
     pdi.press("enter")
 
     # Buy 100 Cottages
-    pdi.keyDown("up")
-    time.sleep(1.01)
-    pdi.keyUp("up")
+    for i in range(10):
+        pdi.press("up")
     pdi.press("enter")
     pdi.press("up")
     pdi.press("enter")
 
     # Buy 100 Tents
-    pdi.keyDown("up")
-    time.sleep(1.01)
-    pdi.keyUp("up")
+    for i in range(10):
+        pdi.press("up")
     pdi.press("enter")
 
     # Exit Buy menu
     pdi.press("c")
-    pdi.press("c")
     time.sleep(0.4)
+    pdi.press("c")
+    time.sleep(0.65)
 
     # ============================================================
     # PHASE 2 — REFINE ITEMS → MEGA POTIONS
@@ -249,29 +250,29 @@ for i in range(cycles):
 
     # Navigate to Recov Med-RF
     pdi.press("c")
+    time.sleep(0.4)
     pdi.press("right")
+    time.sleep(0.1)
     pdi.press("up")
     pdi.press("enter")
-    time.sleep(0.4)
+    time.sleep(0.65)
     pdi.press("enter")
 
     # Refine Tents → 25x Mega Potions
-    pdi.keyDown("down")
-    time.sleep(0.3)
-    pdi.keyUp("down")
+    for i in range(3):
+        pdi.press("down")
     pdi.press("enter")
     pdi.press("down")
     pdi.press("enter")
 
     # Refine Cottages → 75x Mega Potions
-    pdi.keyDown("down")
-    time.sleep(0.5)
-    pdi.keyUp("down")
+    for i in range(5):
+        pdi.press("down")
     pdi.press("enter")
 
     # Exit Recov Med-RF
     pdi.press("c")
-    time.sleep(0.4)
+    time.sleep(0.65)
 
     # ============================================================
     # PHASE 3 — SELL MEGA POTIONS
@@ -279,28 +280,32 @@ for i in range(cycles):
 
     # Navigate to Call Shop → Esthar Shop!!!
     pdi.press("left")
+    time.sleep(0.1)
     pdi.press("down")
     pdi.press("enter")
-    pdi.press("enter")
     time.sleep(0.4)
+    pdi.press("enter")
+    time.sleep(0.65)
 
     # Move to Mega Potions
     pdi.press("right")
     pdi.press("enter")
+    time.sleep(0.4)
     pdi.press("down")
     pdi.press("down")
     pdi.press("enter")
 
     # Sell 75x Mega Potions
-    pdi.keyDown("up")
-    time.sleep(0.8)
-    pdi.keyUp("up")
+    for i in range(8):
+        pdi.press("up")
     pdi.press("enter")
 
     # Exit Sell
     pdi.press("c")
+    time.sleep(0.4)
     pdi.press("left")
     pdi.press("enter")
+    time.sleep(0.4)
 
     # ----------------------------
     # PER-CYCLE LOGGING (one line)

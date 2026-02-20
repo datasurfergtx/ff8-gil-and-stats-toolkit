@@ -36,19 +36,17 @@ import pydirectinput as pdi
 # ----------------------------
 MAX_GIL = 99_999_999
 PROFIT_PER_CYCLE = 352_500
-SECONDS_PER_CYCLE = 17.1595
-
+SECONDS_PER_CYCLE = 17.3818
 FOCUS_GRACE_SECONDS = 5  # time to click back into FF8 after starting script
-
 MIN_START_GIL = 210_000  # required to buy 100x Cottages + 100x Tents per cycle
 
 # ----------------------------
 # LOGGING HELPERS (alignment)
 # ----------------------------
-label_w = 26  # one place to control alignment
+LABEL_W = 26  # one place to control alignment
 
 def log_line(label: str, value: str = "") -> None:
-    print(f"{label:<{label_w}} {value}")
+    print(f"{label:<{LABEL_W}} {value}")
 
 def format_eta_error(td) -> str:
     """
@@ -67,7 +65,7 @@ def format_eta_error(td) -> str:
 
     secs = abs(total)
     minutes = int(secs // 60)
-    rem = secs - (minutes * 60)  # remaining seconds (with fractional part)
+    rem = secs - (minutes * 60)
 
     whole_seconds = int(rem)
     micro = int(round((rem - whole_seconds) * 1_000_000))
@@ -91,7 +89,7 @@ def parse_gil_input(s: str) -> int:
       - "210000", "210,000"
       - "210k", "210K"
       - "0.21m", "30m", "30M"
-    Returns gil as int (not yet rounded).
+    Returns gil as int.
     """
     s = s.strip().lower().replace(",", "")
     m = re.fullmatch(r"(\d+(\.\d+)?)([km]?)", s)
@@ -108,23 +106,10 @@ def parse_gil_input(s: str) -> int:
 
     return int(value)
 
-def round_up_safe(gil: int) -> int:
-    """
-    Round UP to a step based on magnitude (safe: won't cause overshoot).
-    """
-    if gil < 1_000_000:
-        step = 10_000        # 10k precision for small amounts
-    elif gil < 10_000_000:
-        step = 100_000       # 100k precision mid-range
-    else:
-        step = 1_000_000     # 1M precision for large amounts
-
-    return int(math.ceil(gil / step) * step)
 
 def get_current_gil_raw(max_gil: int) -> int:
     """
     Returns the raw parsed gil (clamped to max_gil), with NO rounding.
-    This prevents the 205k -> 210k rounding bug from bypassing min gil checks.
     """
     while True:
         raw = input("Current gil? (examples: 210000, 210k, 0.21m, 30m): ")
@@ -151,39 +136,37 @@ print("==========================================")
 # ----------------------------
 entered_gil = get_current_gil_raw(MAX_GIL)
 
-# Validate BEFORE rounding (prevents the 205k -> 210k bug)
 if entered_gil < MIN_START_GIL:
     raise ValueError(
         f"Insufficient gil: You entered {entered_gil:,} gil. "
         f"You need at least {MIN_START_GIL:,} gil to purchase 100x Cottages and 100x Tents."
     )
 
-# Now apply safe rounding for cycle math (prevents overshoot)
-current_gil = min(round_up_safe(entered_gil), MAX_GIL)
-
+current_gil = entered_gil
 remaining = MAX_GIL - current_gil
-cycles = remaining // PROFIT_PER_CYCLE  # floor division => rounds DOWN (no extra cycles)
+
+# Round UP to the nearest whole cycle (overshoot is allowed)
+cycles = math.ceil(remaining / PROFIT_PER_CYCLE)
 
 estimated_duration = timedelta(seconds=cycles * SECONDS_PER_CYCLE)
 estimated_finish_time = start_time + estimated_duration
 
 estimated_end_gil = current_gil + cycles * PROFIT_PER_CYCLE
-estimated_end_gil = min(estimated_end_gil, MAX_GIL)
-potential_short = MAX_GIL - estimated_end_gil
+projected_over_cap = max(0, estimated_end_gil - MAX_GIL)
 
 print("------------------------------------------")
-log_line("Input (rounded up safely):", f"{current_gil:,} gil")
+log_line("Input:", f"{current_gil:,} gil")
 log_line("Remaining to cap:", f"{remaining:,} gil")
 log_line("Profit per cycle:", f"{PROFIT_PER_CYCLE:,} gil")
-log_line("Cycles to run (floor):", str(cycles))
+log_line("Cycles to run:", str(cycles))
 log_line("Estimated duration:", str(estimated_duration))
 log_line("Estimated finish time:", estimated_finish_time.strftime("%Y-%m-%d %H:%M:%S %Z"))
-log_line("Estimated end gil:", f"{estimated_end_gil:,} gil")
-log_line("Potential short of cap:", f"{potential_short:,} gil")
+log_line("Projected end gil:", f"{estimated_end_gil:,} gil")
+log_line("Projected over cap:", f"{projected_over_cap:,} gil")
 print("------------------------------------------")
 
 if cycles <= 0:
-    print("No cycles needed (you're at or too close to the gil cap). Exiting.")
+    print("No cycles needed (you're at or above the gil cap). Exiting.")
     raise SystemExit
 
 print(f"Click into FF8 now. Starting in {FOCUS_GRACE_SECONDS} seconds...")
@@ -193,7 +176,6 @@ time.sleep(FOCUS_GRACE_SECONDS)
 # MAIN LOOP — RUN CALCULATED CYCLES
 # ============================================================
 for i in range(cycles):
-    # Optional progress log
     log_line("Cycle:", f"{i+1}/{cycles}")
 
     # ============================================================
@@ -201,28 +183,28 @@ for i in range(cycles):
     # ============================================================
 
     # Navigate to Tents & Cottages
-    pdi.press('right')
-    pdi.press('up')
-    pdi.press('up')
-    pdi.press('enter')
+    pdi.press("right")
+    pdi.press("up")
+    pdi.press("up")
+    pdi.press("enter")
 
     # Buy 100 Cottages
-    pdi.keyDown('up')
+    pdi.keyDown("up")
     time.sleep(1.01)
-    pdi.keyUp('up')
-    pdi.press('enter')
-    pdi.press('up')
-    pdi.press('enter')
+    pdi.keyUp("up")
+    pdi.press("enter")
+    pdi.press("up")
+    pdi.press("enter")
 
     # Buy 100 Tents
-    pdi.keyDown('up')
+    pdi.keyDown("up")
     time.sleep(1.01)
-    pdi.keyUp('up')
-    pdi.press('enter')
+    pdi.keyUp("up")
+    pdi.press("enter")
 
     # Exit Buy menu
-    pdi.press('c')
-    pdi.press('c')
+    pdi.press("c")
+    pdi.press("c")
     time.sleep(0.4)
 
     # ============================================================
@@ -230,29 +212,29 @@ for i in range(cycles):
     # ============================================================
 
     # Navigate to Recov Med-RF
-    pdi.press('c')
-    pdi.press('right')
-    pdi.press('up')
-    pdi.press('enter')
+    pdi.press("c")
+    pdi.press("right")
+    pdi.press("up")
+    pdi.press("enter")
     time.sleep(0.4)
-    pdi.press('enter')
+    pdi.press("enter")
 
     # Refine Tents → 25x Mega Potions
-    pdi.keyDown('down')
+    pdi.keyDown("down")
     time.sleep(0.3)
-    pdi.keyUp('down')
-    pdi.press('enter')
-    pdi.press('down')
-    pdi.press('enter')
+    pdi.keyUp("down")
+    pdi.press("enter")
+    pdi.press("down")
+    pdi.press("enter")
 
     # Refine Cottages → 75x Mega Potions
-    pdi.keyDown('down')
+    pdi.keyDown("down")
     time.sleep(0.5)
-    pdi.keyUp('down')
-    pdi.press('enter')
+    pdi.keyUp("down")
+    pdi.press("enter")
 
     # Exit Recov Med-RF
-    pdi.press('c')
+    pdi.press("c")
     time.sleep(0.4)
 
     # ============================================================
@@ -260,29 +242,29 @@ for i in range(cycles):
     # ============================================================
 
     # Navigate to Call Shop → Esthar Shop!!!
-    pdi.press('left')
-    pdi.press('down')
-    pdi.press('enter')
-    pdi.press('enter')
+    pdi.press("left")
+    pdi.press("down")
+    pdi.press("enter")
+    pdi.press("enter")
     time.sleep(0.4)
 
     # Move to Mega Potions
-    pdi.press('right')
-    pdi.press('enter')
-    pdi.press('down')
-    pdi.press('down')
-    pdi.press('enter')
+    pdi.press("right")
+    pdi.press("enter")
+    pdi.press("down")
+    pdi.press("down")
+    pdi.press("enter")
 
     # Sell 75x Mega Potions
-    pdi.keyDown('up')
+    pdi.keyDown("up")
     time.sleep(0.8)
-    pdi.keyUp('up')
-    pdi.press('enter')
+    pdi.keyUp("up")
+    pdi.press("enter")
 
     # Exit Sell
-    pdi.press('c')
-    pdi.press('left')
-    pdi.press('enter')
+    pdi.press("c")
+    pdi.press("left")
+    pdi.press("enter")
 
 # ----------------------------
 # FINISH LOGGING

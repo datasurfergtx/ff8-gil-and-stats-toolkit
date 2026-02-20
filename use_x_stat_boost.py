@@ -38,7 +38,7 @@ pdi.PAUSE = 0.00000000001
 # Ask user how many items to use
 try:
     uses = int(input("How many items would you like to use? "))
-    if uses <= 0 or uses > 100:
+    if uses <= 0 or uses > 150:
         raise ValueError
 except ValueError:
     print("Please enter a valid positive integer.")

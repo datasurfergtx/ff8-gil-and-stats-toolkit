@@ -36,7 +36,7 @@ import pydirectinput as pdi
 # ----------------------------
 MAX_GIL = 99_999_999
 PROFIT_PER_CYCLE = 352_500
-SECONDS_PER_CYCLE = 17
+SECONDS_PER_CYCLE = 17.1595
 
 FOCUS_GRACE_SECONDS = 5  # time to click back into FF8 after starting script
 

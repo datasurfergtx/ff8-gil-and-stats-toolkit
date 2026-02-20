@@ -45,8 +45,10 @@ MIN_START_GIL = 210_000  # required to buy 100x Cottages + 100x Tents per cycle
 # ----------------------------
 LABEL_W = 26  # one place to control alignment
 
+
 def log_line(label: str, value: str = "") -> None:
     print(f"{label:<{LABEL_W}} {value}")
+
 
 def format_eta_error(td) -> str:
     """
@@ -79,6 +81,37 @@ def format_eta_error(td) -> str:
             whole_seconds = 0
 
     return f"{minutes}:{whole_seconds:02d}.{micro:06d} {status}"
+
+
+def format_elapsed(td: timedelta) -> str:
+    """
+    Format elapsed time as H:MM:SS.ffffff
+    """
+    total = td.total_seconds()
+    if total < 0:
+        total = 0.0
+
+    hours = int(total // 3600)
+    rem = total - hours * 3600
+    minutes = int(rem // 60)
+    rem = rem - minutes * 60
+
+    whole_seconds = int(rem)
+    micro = int(round((rem - whole_seconds) * 1_000_000))
+
+    # handle rare rounding case where micro becomes 1_000_000
+    if micro == 1_000_000:
+        whole_seconds += 1
+        micro = 0
+        if whole_seconds == 60:
+            minutes += 1
+            whole_seconds = 0
+        if minutes == 60:
+            hours += 1
+            minutes = 0
+
+    return f"{hours}:{minutes:02d}:{whole_seconds:02d}.{micro:06d}"
+
 
 # ----------------------------
 # HELPERS (input parsing)
@@ -122,6 +155,7 @@ def get_current_gil_raw(max_gil: int) -> int:
         except ValueError:
             print("Invalid input. Examples: 210000, 210k, 0.21m, 30m")
 
+
 # ----------------------------
 # START LOGGING
 # ----------------------------
@@ -158,7 +192,6 @@ print("------------------------------------------")
 log_line("Input:", f"{current_gil:,} gil")
 log_line("Remaining to cap:", f"{remaining:,} gil")
 log_line("Profit per cycle:", f"{PROFIT_PER_CYCLE:,} gil")
-log_line("Cycles to run:", str(cycles))
 log_line("Estimated duration:", str(estimated_duration))
 log_line("Estimated finish time:", estimated_finish_time.strftime("%Y-%m-%d %H:%M:%S %Z"))
 log_line("Projected end gil:", f"{estimated_end_gil:,} gil")
@@ -175,8 +208,10 @@ time.sleep(FOCUS_GRACE_SECONDS)
 # ============================================================
 # MAIN LOOP — RUN CALCULATED CYCLES
 # ============================================================
+run_start_monotonic = time.perf_counter()
+
 for i in range(cycles):
-    log_line("Cycle:", f"{i+1}/{cycles}")
+    cycle_start = time.perf_counter()
 
     # ============================================================
     # PHASE 1 — BUY TENTS & COTTAGES
@@ -265,6 +300,16 @@ for i in range(cycles):
     pdi.press("c")
     pdi.press("left")
     pdi.press("enter")
+
+    # ----------------------------
+    # PER-CYCLE LOGGING (one line)
+    # ----------------------------
+    cycle_end = time.perf_counter()
+    cycle_seconds = cycle_end - cycle_start
+    elapsed = timedelta(seconds=(cycle_end - run_start_monotonic))
+
+    # Single line per cycle
+    print(f"Cycle: {i+1}/{cycles} ({cycle_seconds:.2f}s) | Elapsed: {format_elapsed(elapsed)}")
 
 # ----------------------------
 # FINISH LOGGING

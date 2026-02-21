@@ -35,13 +35,154 @@
 # ==================================================================
 
 import time
+import re
+from datetime import datetime, timedelta
+
 import pydirectinput as pdi
 
 # ----------------------------
 # CONFIG
 # ----------------------------
 FOCUS_GRACE_SECONDS = 5  # time to click back into FF8 after starting script
+CYCLES = 10
+ESTIMATED_DURATION = timedelta(minutes=1,seconds=30)  # placeholder
+TOTAL_COST = 15_000_000  # gil required to complete all cycles
+MIN_GIL_REQUIRED = TOTAL_COST + 210_000  # reserve 210k for mega potion farm startup
 pdi.PAUSE = 0.02 # Remove built-in delay
+
+# ----------------------------
+# LOGGING HELPERS (alignment)
+# ----------------------------
+LABEL_W = 26
+
+
+def log_line(label: str, value: str = "") -> None:
+    print(f"{label:<{LABEL_W}} {value}")
+
+
+def format_elapsed(td: timedelta) -> str:
+    total = td.total_seconds()
+    if total < 0:
+        total = 0.0
+
+    hours = int(total // 3600)
+    rem = total - hours * 3600
+    minutes = int(rem // 60)
+    rem = rem - minutes * 60
+
+    whole_seconds = int(rem)
+    micro = int(round((rem - whole_seconds) * 1_000_000))
+
+    if micro == 1_000_000:
+        whole_seconds += 1
+        micro = 0
+        if whole_seconds == 60:
+            minutes += 1
+            whole_seconds = 0
+        if minutes == 60:
+            hours += 1
+            minutes = 0
+
+    return f"{hours}:{minutes:02d}:{whole_seconds:02d}.{micro:06d}"
+
+
+def format_eta_error(td) -> str:
+    total = td.total_seconds()
+
+    if total == 0:
+        return "0:00.000000 on time"
+
+    status = "late" if total > 0 else "early"
+
+    secs = abs(total)
+    minutes = int(secs // 60)
+    rem = secs - (minutes * 60)
+
+    whole_seconds = int(rem)
+    micro = int(round((rem - whole_seconds) * 1_000_000))
+
+    if micro == 1_000_000:
+        whole_seconds += 1
+        micro = 0
+        if whole_seconds == 60:
+            minutes += 1
+            whole_seconds = 0
+
+    return f"{minutes}:{whole_seconds:02d}.{micro:06d} {status}"
+
+
+# ----------------------------
+# HELPERS (input parsing)
+# ----------------------------
+def parse_gil_input(s: str) -> int:
+    """
+    Accepts:
+      - "210000", "210,000"
+      - "210k", "210K"
+      - "0.21m", "30m", "30M"
+    Returns gil as int.
+    """
+    s = s.strip().lower().replace(",", "")
+    m = re.fullmatch(r"(\d+(\.\d+)?)([km]?)", s)
+    if not m:
+        raise ValueError("Invalid format")
+
+    value = float(m.group(1))
+    suffix = m.group(3)
+
+    if suffix == "k":
+        value *= 1_000
+    elif suffix == "m":
+        value *= 1_000_000
+
+    return int(value)
+
+
+# ----------------------------
+# GIL CHECK (optional)
+# ----------------------------
+print("------------------------------------------")
+print(f"This script requires {TOTAL_COST:,} gil to complete.")
+print("Press Enter to skip the gil check.")
+print("------------------------------------------")
+
+while True:
+    raw = input("Current gil? (examples: 15000000, 15m, 15000k): ").strip()
+    if raw == "":
+        print("Gil check skipped.")
+        break
+    try:
+        current_gil = parse_gil_input(raw)
+        if current_gil < 0:
+            print("Enter a non-negative amount.")
+            continue
+        if current_gil < MIN_GIL_REQUIRED:
+            raise ValueError(
+                f"Insufficient gil: You entered {current_gil:,} gil. "
+                f"You need at least {TOTAL_COST:,} gil."
+            )
+        remaining_gil = current_gil - TOTAL_COST
+        log_line("Input:", f"{current_gil:,} gil")
+        log_line("Cost:", f"{TOTAL_COST:,} gil")
+        log_line("Gil remaining after:", f"{remaining_gil:,} gil")
+        break
+    except ValueError as e:
+        print(e)
+
+# ----------------------------
+# START LOGGING
+# ----------------------------
+start_time = datetime.now().astimezone()
+estimated_finish_time = start_time + ESTIMATED_DURATION
+
+print("==========================================")
+print("HP Up Farming Script Started")
+log_line("Start Time:", start_time.strftime("%Y-%m-%d %H:%M:%S %Z"))
+print("------------------------------------------")
+log_line("Cycles to run:", str(CYCLES))
+log_line("Estimated duration:", str(ESTIMATED_DURATION))
+log_line("Estimated finish time:", estimated_finish_time.strftime("%Y-%m-%d %H:%M:%S %Z"))
+print("==========================================")
 
 print(f"Click into FF8 now. Starting in {FOCUS_GRACE_SECONDS} seconds...")
 time.sleep(FOCUS_GRACE_SECONDS)
@@ -50,7 +191,10 @@ time.sleep(FOCUS_GRACE_SECONDS)
 # PHASE 1 — SHOP + MED-RF LOOP (run 10 cycles)
 # Goal: repeatedly buy Giant's Rings and convert them into Gaea's Rings.
 # ============================================================
-for cycle in range(10):
+run_start_monotonic = time.perf_counter()
+
+for cycle in range(1, CYCLES + 1):
+    cycle_start = time.perf_counter()
     # ------------------------------------------------------------
     # PHASE 1.0 — BUY GIANT'S RINGS
     # Starting state (assumed): Esthar Pet Shop → Buy menu, cursor on "G-Potion"
@@ -104,6 +248,18 @@ for cycle in range(10):
     pdi.press('enter')
     time.sleep(0.4)
 
+    # ----------------------------
+    # PER-CYCLE LOGGING (one line)
+    # ----------------------------
+    cycle_end = time.perf_counter()
+    cycle_seconds = cycle_end - cycle_start
+    elapsed = timedelta(seconds=(cycle_end - run_start_monotonic))
+
+    print(
+        f"Cycle: {cycle}/{CYCLES} ({cycle_seconds:.2f}s) | "
+        f"Elapsed: {format_elapsed(elapsed)}"
+    )
+
 # ============================================================
 # PHASE 2 — FINAL REFINE (run once after batching)
 # Goal: refine accumulated Gaea's Rings into HP Up (Forbid Med-RF).
@@ -129,3 +285,20 @@ pdi.press('enter')
 for i in range(10):
     pdi.press('down')
 pdi.press('enter')
+
+# ----------------------------
+# FINISH LOGGING
+# ----------------------------
+end_time = datetime.now().astimezone()
+actual_duration = end_time - start_time
+delta = end_time - estimated_finish_time
+
+print("==========================================")
+print("HP Up Farming Script Finished")
+log_line("Finish Time:", end_time.strftime("%Y-%m-%d %H:%M:%S %Z"))
+log_line("Actual duration:", str(actual_duration))
+print("------------------------------------------")
+log_line("Estimated duration:", str(ESTIMATED_DURATION))
+log_line("Estimated finish time:", estimated_finish_time.strftime("%Y-%m-%d %H:%M:%S %Z"))
+log_line("Estimate error:", format_eta_error(delta))
+print("==========================================")

@@ -179,12 +179,12 @@ print("Press Enter to skip the gil check (runs once).")
 print("------------------------------------------")
 
 while True:
-    raw = input("Current gil? (examples: 15000000, 15m, 15000k): ").strip()
+    raw = input("Current gil? (examples: 15000000, 15m, 15000k, max): ").strip()
     if raw == "":
         print("Gil check skipped. Running 1 loop.")
         break
     try:
-        current_gil = parse_gil_input(raw)
+        current_gil = 99_999_999 if raw.lower() == "max" else parse_gil_input(raw)
         if current_gil < 0:
             print("Enter a non-negative amount.")
             continue

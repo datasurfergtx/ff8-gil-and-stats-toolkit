@@ -49,12 +49,12 @@ import pydirectinput as pdi
 # ----------------------------
 # CONFIG
 # ----------------------------
+pdi.PAUSE = 0.02 # Remove built-in delay
 FOCUS_GRACE_SECONDS = 5  # time to click back into FF8 after starting script
 CYCLES = 10
-ESTIMATED_DURATION = timedelta(minutes=1,seconds=30)  # placeholder
+ESTIMATED_DURATION = timedelta(minutes=1,seconds=42)  # placeholder
 TOTAL_COST = 15_000_000  # gil required to complete all cycles
 MIN_GIL_REQUIRED = TOTAL_COST + 210_000  # reserve 210k for mega potion farm startup
-pdi.PAUSE = 0.02 # Remove built-in delay
 
 STAT_OPTIONS = {
     "hp":  {"presses": 4, "item": "Giant's Ring",  "stat_up": "HP Up"},
@@ -231,12 +231,12 @@ for cycle in range(1, CYCLES + 1):
     # ------------------------------------------------------------
 
     pdi.press('right')
-    time.sleep(0.2)
+    time.sleep(0.25)
     for i in range(stat["presses"]):
         pdi.press('down')
     pdi.press('enter')
-    time.sleep(0.1)
-    for i in range(10):
+    time.sleep(0.15)
+    for i in range(12):
         pdi.press('up')
     pdi.press('enter')
 
@@ -253,7 +253,7 @@ for cycle in range(1, CYCLES + 1):
     # ------------------------------------------------------------
 
     pdi.press('right')
-    time.sleep(0.2)
+    time.sleep(0.25)
     for i in range(5):
         pdi.press('down')
     pdi.press('enter')
@@ -262,6 +262,7 @@ for cycle in range(1, CYCLES + 1):
     time.sleep(0.15)
     pdi.press('down')
     pdi.press('enter')
+    time.sleep(0.15)
 
     # ------------------------------------------------------------
     # PHASE 1.3 — RETURN TO ESTHAR PET SHOP
@@ -270,7 +271,7 @@ for cycle in range(1, CYCLES + 1):
     pdi.press('c')
     time.sleep(0.65)
     pdi.press('left')
-    time.sleep(0.2)
+    time.sleep(0.25)
     for i in range(5):
         pdi.press('up')
     pdi.press('enter')

@@ -284,6 +284,8 @@ for run in range(outer_loops):
 
         pdi.press('c')
         time.sleep(0.65)
+        if cycle == CYCLES: #end loop at final cycle to get to phase 2
+            break
         pdi.press('left')
         time.sleep(0.25)
         for i in range(5):
@@ -315,16 +317,8 @@ for run in range(outer_loops):
     # ============================================================
 
     # Navigate to Forbid Med-RF
-    pdi.press('c')
-    time.sleep(0.4)
-    pdi.press('c')
-    time.sleep(0.65)
-    pdi.press('c')
-    time.sleep(0.4)
-    pdi.press('right')
-    time.sleep(0.1)
-    for i in range(3):
-        pdi.press('down')
+    for i in range(2):
+        pdi.press('up')
     pdi.press('enter')
     time.sleep(0.65)
 

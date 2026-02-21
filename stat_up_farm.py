@@ -52,7 +52,8 @@ import pydirectinput as pdi
 pdi.PAUSE = 0.02 # Remove built-in delay
 FOCUS_GRACE_SECONDS = 5  # time to click back into FF8 after starting script
 CYCLES = 10
-ESTIMATED_DURATION_PER_RUN = timedelta(minutes=1, seconds=42)  # placeholder
+ESTIMATED_FIRST_RUN = timedelta(seconds=92)
+ESTIMATED_EXTRA_RUN = timedelta(seconds=98)
 TOTAL_COST = 15_000_000  # gil required to complete all cycles
 MIN_GIL_REQUIRED = TOTAL_COST + 210_000  # reserve 210k for mega potion farm startup
 
@@ -207,7 +208,7 @@ while True:
 # START LOGGING
 # ----------------------------
 start_time = datetime.now().astimezone()
-estimated_duration = ESTIMATED_DURATION_PER_RUN * outer_loops
+estimated_duration = ESTIMATED_FIRST_RUN + ESTIMATED_EXTRA_RUN * (outer_loops - 1)
 estimated_finish_time = start_time + estimated_duration
 
 print("==========================================")

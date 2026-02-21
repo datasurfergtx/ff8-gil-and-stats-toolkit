@@ -1,4 +1,8 @@
 # ============================================================
+# mega_potion_profit.py — v1.0 (2026-02-21)
+# ============================================================
+
+# ============================================================
 # DISCLAIMER / READ BEFORE RUNNING
 # ============================================================
 # This script simulates keyboard inputs only. It does NOT read game memory,
@@ -7,9 +11,11 @@
 #
 # If the game/menu state is not EXACTLY as expected, inputs can desync and may
 # cause unintended purchases, item loss, or other unwanted actions.
+# You must monitor the script while running and stop it if it desynchronizes.
 #
-# This script runs for a calculated number of cycles based on your current Gil.
-# You must keep FF8 focused while it runs (do not alt-tab).
+# Stop execution:
+# - Press CTRL + C in the terminal, or
+# - Close the terminal / end the Python process.
 #
 # By running this script, you accept full responsibility for the outcome.
 # If you are not comfortable reviewing and modifying Python code, do not use it.
@@ -22,6 +28,16 @@
 # 2) Open: Call Shop → Esthar Shop!!! → Buy menu.
 # 3) In the Buy list, place the cursor on "Potion".
 # 4) Keep FF8 focused while running (do not alt-tab). Borderless Windowed is recommended.
+#
+# Runtime prompts:
+#   Gil — Enter current gil. The script calculates cycles to reach 99,999,999 gil:
+#           cycles = ceil((99,999,999 - current_gil) / 352,500)
+#         Minimum 210,000 gil required (cost of 100x Cottages + 100x Tents).
+#
+# Script structure (each cycle):
+#   Phase 1: Buy 100x Cottages + 100x Tents from Esthar Shop!!!.
+#   Phase 2: Refine via Recov Med-RF → 25x Mega Potions (Tents) + 75x Mega Potions (Cottages).
+#   Phase 3: Sell 75x Mega Potions at Esthar Shop!!! (+352,500 gil profit per cycle).
 # ============================================================
 
 import time

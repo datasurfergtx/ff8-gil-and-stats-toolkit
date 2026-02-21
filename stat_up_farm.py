@@ -1,4 +1,8 @@
 # ==================================================================
+# stat_up_farm.py — v1.0 (2026-02-21)
+# ==================================================================
+
+# ==================================================================
 # DISCLAIMER / READ BEFORE RUNNING
 # ==================================================================
 # This script simulates keyboard inputs only. It does NOT read game memory,
@@ -7,8 +11,6 @@
 #
 # If the game/menu state is not EXACTLY as expected, inputs can desync and may
 # cause unintended purchases, item loss, or other unwanted actions.
-#
-# This script runs a fixed number of shop cycles, then performs a final refine.
 # You must monitor the script while running and stop it if it desynchronizes.
 #
 # Stop execution:
@@ -27,17 +29,25 @@
 # 3) In the Buy list, place the cursor on "G-Potion".
 # 4) Keep FF8 focused while running (do not alt-tab). Borderless Windowed is recommended.
 #
-# Script structure:
-# - Phase 1 (looped): Buy item → Refine into intermediate → Return to shop.
-# - Phase 2 (once): Refine accumulated intermediates → Stat Up (Forbid Med-RF).
+# Runtime prompts:
+#   Stat  — Choose which stat to farm (HP, Str, Vit, Mag).
+#   Gil   — Enter current gil (e.g. 15m, 99m, max) or press Enter to skip.
+#           When provided, the script calculates how many runs you can afford:
+#             runs = (current_gil - 210k) / 15m  (rounded down)
+#           When skipped, it defaults to 1 run.
+#           HP always runs once (inventory fills up; cannot batch further).
 #
-# Stat options (chosen at runtime):
-#   HP  → Giant's Ring  → HP Up
-#   Str → Power Wrist   → Str Up
-#   Vit → Force Armlet  → Vit Up
-#   Mag → Hypno Crown   → Mag Up
+# Script structure (each run):
+#   Phase 1 (looped 10 cycles): Buy item → Refine via GFAbl Med-RF → Return to shop.
+#     - On the final cycle, skips the return-to-shop step.
+#   Phase 2 (once per run): Refine accumulated intermediates → Stat Up (Forbid Med-RF).
+#   Phase 3 (between runs): Navigate back to Esthar Pet Shop Buy menu for next run.
 #
-# NOTE: Phase 2 runs ONCE after the loop, which is useful for batching inputs.
+# Stat options:
+#   HP  → Giant's Ring  → Gaea's Ring  → HP Up   (100 per run, single run only)
+#   Str → Power Wrist   → Hyper Wrist  → Str Up  (10 per run)
+#   Vit → Force Armlet  → Magic Armlet → Vit Up  (10 per run)
+#   Mag → Hypno Crown   → Royal Crown  → Mag Up  (10 per run)
 # ==================================================================
 
 import time

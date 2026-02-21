@@ -34,10 +34,10 @@ import pydirectinput as pdi
 # ----------------------------
 # CONFIG
 # ----------------------------
-pdi.PAUSE = 0.02 # Remove built-in delay
+pdi.PAUSE = 0.025 # Remove built-in delay
 MAX_GIL = 99_999_999
 PROFIT_PER_CYCLE = 352_500
-SECONDS_PER_CYCLE = 12.6355
+SECONDS_PER_CYCLE = 13.51
 FOCUS_GRACE_SECONDS = 5  # time to click back into FF8 after starting script
 MIN_START_GIL = 210_000  # required to buy 100x Cottages + 100x Tents per cycle
 
@@ -225,7 +225,7 @@ for cycle_num in range(1, cycles + 1):
     pdi.press("up")
     pdi.press("up")
     pdi.press("enter")
-    time.sleep(0.1)
+    time.sleep(0.15)
 
     # Buy 100 Cottages
     for i in range(10):
@@ -233,7 +233,7 @@ for cycle_num in range(1, cycles + 1):
     pdi.press("enter")
     pdi.press("up")
     pdi.press("enter")
-    time.sleep(0.1)
+    time.sleep(0.15)
 
     # Buy 100 Tents
     for i in range(10):
@@ -259,20 +259,22 @@ for cycle_num in range(1, cycles + 1):
     pdi.press("enter")
     time.sleep(0.65)
     pdi.press("enter")
-    time.sleep(0.15)
+    time.sleep(0.2)
 
     # Refine Tents → 25x Mega Potions
     for i in range(3):
         pdi.press("down")
     pdi.press("enter")
+    time.sleep(0.1)
     pdi.press("down")
     pdi.press("enter")
-    time.sleep(0.15)
+    time.sleep(0.2)
 
     # Refine Cottages → 75x Mega Potions
     for i in range(5):
         pdi.press("down")
     pdi.press("enter")
+    time.sleep(0.1)
 
     # Exit Recov Med-RF
     pdi.press("c")
@@ -298,7 +300,7 @@ for cycle_num in range(1, cycles + 1):
     pdi.press("down")
     pdi.press("down")
     pdi.press("enter")
-    time.sleep(0.1)
+    time.sleep(0.2)
 
     # Sell 75x Mega Potions
     for i in range(8):

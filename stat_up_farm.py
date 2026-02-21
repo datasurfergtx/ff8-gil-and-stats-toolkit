@@ -315,6 +315,7 @@ for run in range(outer_loops):
     # PHASE 2 — FINAL REFINE (run once after batching)
     # Goal: refine accumulated Mid Tier Refinement into Stat Up (Forbid Med-RF).
     # ============================================================
+    phase2_start = time.perf_counter()
 
     # Navigate to Forbid Med-RF
     for i in range(2):
@@ -330,6 +331,20 @@ for run in range(outer_loops):
     for i in range(10):
         pdi.press('down')
     pdi.press('enter')
+
+    # ----------------------------
+    # PHASE 2 LOGGING
+    # ----------------------------
+    phase2_end = time.perf_counter()
+    phase2_seconds = phase2_end - phase2_start
+    elapsed = timedelta(seconds=(phase2_end - run_start_monotonic))
+
+    run_prefix = f"Run: {run + 1}/{outer_loops} | " if outer_loops > 1 else ""
+    print(
+        f"{run_prefix}"
+        f"Stat Ref: 1/1 ({phase2_seconds:.2f}s) | "
+        f"Elapsed: {format_elapsed(elapsed)}"
+    )
 
     # ============================================================
     # PHASE 3 — RETURN TO PHASE 1 START

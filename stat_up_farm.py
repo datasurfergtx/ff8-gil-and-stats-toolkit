@@ -270,6 +270,8 @@ for run in range(outer_loops):
             pdi.press('down')
         pdi.press('enter')
         time.sleep(0.65)
+        if run > 0:
+            pdi.press('down')
         pdi.press('enter')
         time.sleep(0.15)
         pdi.press('down')
@@ -328,6 +330,8 @@ for run in range(outer_loops):
 
     # Refine to Stat Up
     pdi.press('down')
+    if run > 0:
+        pdi.press('down')
     pdi.press('enter')
     for i in range(10):
         pdi.press('down')

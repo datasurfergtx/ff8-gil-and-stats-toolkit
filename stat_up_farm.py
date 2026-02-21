@@ -193,7 +193,8 @@ while True:
                 f"Insufficient gil: You entered {current_gil:,} gil. "
                 f"You need at least {MIN_GIL_REQUIRED:,} gil."
             )
-        outer_loops = (current_gil - 210_000) // TOTAL_COST
+        if stat_choice != "hp":
+            outer_loops = (current_gil - 210_000) // TOTAL_COST
         total_cost = outer_loops * TOTAL_COST
         remaining_gil = current_gil - total_cost
         log_line("Input:", f"{current_gil:,} gil")

@@ -52,7 +52,7 @@ import pydirectinput as pdi
 pdi.PAUSE = 0.02 # Remove built-in delay
 FOCUS_GRACE_SECONDS = 5  # time to click back into FF8 after starting script
 CYCLES = 10
-ESTIMATED_DURATION = timedelta(minutes=1,seconds=42)  # placeholder
+ESTIMATED_DURATION_PER_RUN = timedelta(minutes=1, seconds=42)  # placeholder
 TOTAL_COST = 15_000_000  # gil required to complete all cycles
 MIN_GIL_REQUIRED = TOTAL_COST + 210_000  # reserve 210k for mega potion farm startup
 
@@ -170,15 +170,17 @@ stat = STAT_OPTIONS[stat_choice]
 # ----------------------------
 # GIL CHECK (optional)
 # ----------------------------
+outer_loops = 1
+
 print("------------------------------------------")
-print(f"This script requires {TOTAL_COST:,} gil to complete.")
-print("Press Enter to skip the gil check.")
+print(f"This script requires {TOTAL_COST:,} gil per run (+ 210k reserved).")
+print("Press Enter to skip the gil check (runs once).")
 print("------------------------------------------")
 
 while True:
     raw = input("Current gil? (examples: 15000000, 15m, 15000k): ").strip()
     if raw == "":
-        print("Gil check skipped.")
+        print("Gil check skipped. Running 1 loop.")
         break
     try:
         current_gil = parse_gil_input(raw)
@@ -188,11 +190,14 @@ while True:
         if current_gil < MIN_GIL_REQUIRED:
             raise ValueError(
                 f"Insufficient gil: You entered {current_gil:,} gil. "
-                f"You need at least {TOTAL_COST:,} gil."
+                f"You need at least {MIN_GIL_REQUIRED:,} gil."
             )
-        remaining_gil = current_gil - TOTAL_COST
+        outer_loops = (current_gil - 210_000) // TOTAL_COST
+        total_cost = outer_loops * TOTAL_COST
+        remaining_gil = current_gil - total_cost
         log_line("Input:", f"{current_gil:,} gil")
-        log_line("Cost:", f"{TOTAL_COST:,} gil")
+        log_line("Runs:", str(outer_loops))
+        log_line("Total cost:", f"{total_cost:,} gil")
         log_line("Gil remaining after:", f"{remaining_gil:,} gil")
         break
     except ValueError as e:
@@ -202,122 +207,150 @@ while True:
 # START LOGGING
 # ----------------------------
 start_time = datetime.now().astimezone()
-estimated_finish_time = start_time + ESTIMATED_DURATION
+estimated_duration = ESTIMATED_DURATION_PER_RUN * outer_loops
+estimated_finish_time = start_time + estimated_duration
 
 print("==========================================")
 print(f"{stat['stat_up']} Farming Script Started")
 log_line("Farming:", f"{stat['item']} → {stat['stat_up']}")
 log_line("Start Time:", start_time.strftime("%Y-%m-%d %H:%M:%S %Z"))
 print("------------------------------------------")
-log_line("Cycles to run:", str(CYCLES))
-log_line("Estimated duration:", str(ESTIMATED_DURATION))
+log_line("Runs:", str(outer_loops))
+log_line("Cycles per run:", str(CYCLES))
+log_line("Estimated duration:", str(estimated_duration))
 log_line("Estimated finish time:", estimated_finish_time.strftime("%Y-%m-%d %H:%M:%S %Z"))
 print("==========================================")
 
 print(f"Click into FF8 now. Starting in {FOCUS_GRACE_SECONDS} seconds...")
 time.sleep(FOCUS_GRACE_SECONDS)
 
-# ============================================================
-# PHASE 1 — SHOP + MED-RF LOOP (run 10 cycles)
-# Goal: repeatedly buy Entry Item and convert them into Mid Tier Refinement.
-# ============================================================
 run_start_monotonic = time.perf_counter()
 
-for cycle in range(1, CYCLES + 1):
-    cycle_start = time.perf_counter()
-    # ------------------------------------------------------------
-    # PHASE 1.0 — BUY ITEM
-    # Starting state (assumed): Esthar Pet Shop → Buy menu, cursor on "G-Potion"
-    # ------------------------------------------------------------
+for run in range(outer_loops):
+    if outer_loops > 1:
+        print(f"--- Run {run + 1}/{outer_loops} ---")
 
+    # ============================================================
+    # PHASE 1 — SHOP + MED-RF LOOP (run 10 cycles)
+    # Goal: repeatedly buy Entry Item and convert them into Mid Tier Refinement.
+    # ============================================================
+
+    for cycle in range(1, CYCLES + 1):
+        cycle_start = time.perf_counter()
+        # ------------------------------------------------------------
+        # PHASE 1.0 — BUY ITEM
+        # Starting state (assumed): Esthar Pet Shop → Buy menu, cursor on "G-Potion"
+        # ------------------------------------------------------------
+
+        pdi.press('right')
+        time.sleep(0.25)
+        for i in range(stat["presses"]):
+            pdi.press('down')
+        pdi.press('enter')
+        time.sleep(0.15)
+        for i in range(12):
+            pdi.press('up')
+        pdi.press('enter')
+
+        # Exit back out of shop menus
+        pdi.press('c')
+        time.sleep(0.4)
+        pdi.press('c')
+        time.sleep(0.65)
+        pdi.press('c')
+        time.sleep(0.4)
+
+        # ------------------------------------------------------------
+        # PHASE 1.2 — REFINE ITEM → Mid Tier Refinement (GFAbl Med-RF)
+        # ------------------------------------------------------------
+
+        pdi.press('right')
+        time.sleep(0.25)
+        for i in range(5):
+            pdi.press('down')
+        pdi.press('enter')
+        time.sleep(0.65)
+        pdi.press('enter')
+        time.sleep(0.15)
+        pdi.press('down')
+        pdi.press('enter')
+        time.sleep(0.15)
+
+        # ------------------------------------------------------------
+        # PHASE 1.3 — RETURN TO ESTHAR PET SHOP
+        # ------------------------------------------------------------
+
+        pdi.press('c')
+        time.sleep(0.65)
+        pdi.press('left')
+        time.sleep(0.25)
+        for i in range(5):
+            pdi.press('up')
+        pdi.press('enter')
+        time.sleep(0.4)
+        pdi.press('enter')
+        time.sleep(0.65)
+        pdi.press('enter')
+        time.sleep(0.4)
+
+        # ----------------------------
+        # PER-CYCLE LOGGING (one line)
+        # ----------------------------
+        cycle_end = time.perf_counter()
+        cycle_seconds = cycle_end - cycle_start
+        elapsed = timedelta(seconds=(cycle_end - run_start_monotonic))
+
+        run_prefix = f"Run: {run + 1}/{outer_loops} | " if outer_loops > 1 else ""
+        print(
+            f"{run_prefix}"
+            f"Cycle: {cycle}/{CYCLES} ({cycle_seconds:.2f}s) | "
+            f"Elapsed: {format_elapsed(elapsed)}"
+        )
+
+    # ============================================================
+    # PHASE 2 — FINAL REFINE (run once after batching)
+    # Goal: refine accumulated Mid Tier Refinement into Stat Up (Forbid Med-RF).
+    # ============================================================
+
+    # Navigate to Forbid Med-RF
+    pdi.press('c')
+    time.sleep(0.4)
+    pdi.press('c')
+    time.sleep(0.65)
+    pdi.press('c')
+    time.sleep(0.4)
     pdi.press('right')
-    time.sleep(0.25)
-    for i in range(stat["presses"]):
+    time.sleep(0.1)
+    for i in range(3):
         pdi.press('down')
     pdi.press('enter')
-    time.sleep(0.15)
-    for i in range(12):
-        pdi.press('up')
-    pdi.press('enter')
-
-    # Exit back out of shop menus
-    pdi.press('c')
-    time.sleep(0.4)
-    pdi.press('c')
     time.sleep(0.65)
-    pdi.press('c')
-    time.sleep(0.4)
 
-    # ------------------------------------------------------------
-    # PHASE 1.2 — REFINE ITEM → Mid Tier Refinement (GFAbl Med-RF)
-    # ------------------------------------------------------------
-
-    pdi.press('right')
-    time.sleep(0.25)
-    for i in range(5):
+    # Refine to Stat Up
+    pdi.press('down')
+    pdi.press('enter')
+    for i in range(10):
         pdi.press('down')
     pdi.press('enter')
-    time.sleep(0.65)
-    pdi.press('enter')
-    time.sleep(0.15)
-    pdi.press('down')
-    pdi.press('enter')
-    time.sleep(0.15)
 
-    # ------------------------------------------------------------
-    # PHASE 1.3 — RETURN TO ESTHAR PET SHOP
-    # ------------------------------------------------------------
-
-    pdi.press('c')
-    time.sleep(0.65)
-    pdi.press('left')
-    time.sleep(0.25)
-    for i in range(5):
-        pdi.press('up')
-    pdi.press('enter')
-    time.sleep(0.4)
-    pdi.press('enter')
-    time.sleep(0.65)
-    pdi.press('enter')
-    time.sleep(0.4)
-
-    # ----------------------------
-    # PER-CYCLE LOGGING (one line)
-    # ----------------------------
-    cycle_end = time.perf_counter()
-    cycle_seconds = cycle_end - cycle_start
-    elapsed = timedelta(seconds=(cycle_end - run_start_monotonic))
-
-    print(
-        f"Cycle: {cycle}/{CYCLES} ({cycle_seconds:.2f}s) | "
-        f"Elapsed: {format_elapsed(elapsed)}"
-    )
-
-# ============================================================
-# PHASE 2 — FINAL REFINE (run once after batching)
-# Goal: refine accumulated Mid Tier Refinement into Stat Up (Forbid Med-RF).
-# ============================================================
-
-# Navigate to Forbid Med-RF
-pdi.press('c')
-time.sleep(0.4)
-pdi.press('c')
-time.sleep(0.65)
-pdi.press('c')
-time.sleep(0.4)
-pdi.press('right')
-time.sleep(0.1)
-for i in range(3):
-    pdi.press('down')
-pdi.press('enter')
-time.sleep(0.65)
-
-# Refine to Stat Up
-pdi.press('down')
-pdi.press('enter')
-for i in range(10):
-    pdi.press('down')
-pdi.press('enter')
+    # ============================================================
+    # PHASE 3 — RETURN TO PHASE 1 START
+    # Starting state: Forbid Med-RF refine menu
+    # Target state:   Esthar Pet Shop → Buy menu, cursor on "G-Potion"
+    # ============================================================
+    if run < outer_loops - 1:
+        pdi.press('c')
+        time.sleep(0.65)
+        pdi.press('left')
+        time.sleep(0.25)
+        for i in range(3):
+            pdi.press('up')
+        pdi.press('enter')
+        time.sleep(0.4)
+        pdi.press('enter')
+        time.sleep(0.65)
+        pdi.press('enter')
+        time.sleep(0.4)
 
 # ----------------------------
 # FINISH LOGGING
@@ -331,7 +364,7 @@ print(f"{stat['stat_up']} Farming Script Finished")
 log_line("Finish Time:", end_time.strftime("%Y-%m-%d %H:%M:%S %Z"))
 log_line("Actual duration:", str(actual_duration))
 print("------------------------------------------")
-log_line("Estimated duration:", str(ESTIMATED_DURATION))
+log_line("Estimated duration:", str(estimated_duration))
 log_line("Estimated finish time:", estimated_finish_time.strftime("%Y-%m-%d %H:%M:%S %Z"))
 log_line("Estimate error:", format_eta_error(delta))
 print("==========================================")

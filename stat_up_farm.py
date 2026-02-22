@@ -255,12 +255,12 @@ for run in range(outer_loops):
         # ------------------------------------------------------------
 
         pdi.press('right')
-        time.sleep(0.25)
+        time.sleep(0.3)
         for i in range(stat["presses"]):
             pdi.press('down')
         pdi.press('enter')
-        time.sleep(0.15)
-        for i in range(12):
+        time.sleep(0.2)
+        for i in range(10):
             pdi.press('up')
         pdi.press('enter')
 

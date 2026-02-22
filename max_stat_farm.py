@@ -57,18 +57,22 @@ MAX_GIL = 99_999_999
 
 # Gil farm
 GIL_PROFIT_PER_CYCLE = 352_500
-GIL_SECONDS_PER_CYCLE = 13.51
+GIL_SECONDS_PER_CYCLE = 13.15
 GIL_MIN_START = 210_000
 
 # Stat farm
 STAT_CYCLES = 10
 STAT_COST_PER_RUN = 15_000_000
 
-# Time estimates (seconds)
-STAT_ESTIMATED_FIRST_RUN_S = 92
-STAT_ESTIMATED_EXTRA_RUN_S = 98
-ITEM_USE_SECONDS_PER_ITEM = 0.22
-NAV_OVERHEAD_S = 10
+# Time estimates (calibrated from actual runs)
+STAT_CYCLE_RETURN_S = 9.35
+STAT_CYCLE_FINAL_S = 6.5
+STAT_REF_S = 2.2
+STAT_RUN_TRANSITION_S = 3.5
+NAV_GIL_TO_STAT_S = 3
+NAV_STAT_TO_ITEMS_BASE_S = 3
+NAV_STAT_TO_ITEMS_PER_ITEM_S = 0.22
+NAV_ITEMS_TO_GIL_S = 4
 
 CHARACTERS = {
     "squall": 1, "zell": 2, "irvine": 3,
@@ -184,6 +188,63 @@ def parse_gil_input(s: str) -> int:
         value *= 1_000_000
 
     return int(value)
+
+
+# ==================================================================
+# ESTIMATION HELPERS
+# ==================================================================
+def format_estimate(seconds):
+    """Format seconds as human-readable estimate like ~5m 30s or ~1h 23m."""
+    seconds = max(0, seconds)
+    if seconds < 60:
+        return f"~{int(round(seconds))}s"
+    if seconds < 3600:
+        m = int(seconds // 60)
+        s = int(round(seconds % 60))
+        if s == 60:
+            m += 1
+            s = 0
+        return f"~{m}m {s}s" if s else f"~{m}m"
+    h = int(seconds // 3600)
+    m = int(round((seconds % 3600) / 60))
+    if m == 60:
+        h += 1
+        m = 0
+    return f"~{h}h {m}m" if m else f"~{h}h"
+
+
+def estimate_run_seconds(num_cycles, is_first_run):
+    """Estimate seconds for one stat farm run (buy cycles + stat ref)."""
+    if num_cycles <= 0:
+        return 0
+    s = STAT_CYCLE_FINAL_S + STAT_REF_S
+    if num_cycles > 1:
+        s += (num_cycles - 1) * STAT_CYCLE_RETURN_S
+    if not is_first_run:
+        s += STAT_RUN_TRANSITION_S
+    return s
+
+
+def estimate_stat_farm_seconds(num_runs, last_run_cycles):
+    """Estimate total seconds for the stat farm phase."""
+    total = 0
+    for r in range(num_runs):
+        cycles = last_run_cycles if r == num_runs - 1 else STAT_CYCLES
+        total += estimate_run_seconds(cycles, r == 0)
+    return total
+
+
+def estimate_gil_farm_seconds(current_gil_amount):
+    """Estimate seconds for gil farm from current_gil_amount to max."""
+    if current_gil_amount >= MAX_GIL:
+        return 0
+    cycles = math.ceil((MAX_GIL - current_gil_amount) / GIL_PROFIT_PER_CYCLE)
+    return cycles * GIL_SECONDS_PER_CYCLE
+
+
+def estimate_item_usage_seconds(num_items):
+    """Estimate seconds for navigation to item menu + using items."""
+    return NAV_STAT_TO_ITEMS_BASE_S + num_items * NAV_STAT_TO_ITEMS_PER_ITEM_S
 
 
 # ====================================================================
@@ -609,25 +670,44 @@ while True:
 
 has_max_gil = current_gil >= MAX_GIL
 
-# --- ESTIMATE TOTAL TIME ---
-max_gil_cost_per_exec = max_runs_per_exec * STAT_COST_PER_RUN
-stat_farm_est_s = STAT_ESTIMATED_FIRST_RUN_S + STAT_ESTIMATED_EXTRA_RUN_S * (max_runs_per_exec - 1)
-item_use_est_s = max_items_per_exec * ITEM_USE_SECONDS_PER_ITEM
-subsequent_gil_cycles = math.ceil(max_gil_cost_per_exec / GIL_PROFIT_PER_CYCLE)
-subsequent_gil_est_s = subsequent_gil_cycles * GIL_SECONDS_PER_CYCLE
-subsequent_iter_est_s = subsequent_gil_est_s + stat_farm_est_s + item_use_est_s + NAV_OVERHEAD_S
+# --- BUILD EXECUTION PLAN ---
+execution_plan = []
+plan_remaining = items_needed
+plan_gil = current_gil
 
-if has_max_gil:
-    first_iter_est_s = stat_farm_est_s + item_use_est_s + NAV_OVERHEAD_S
-else:
-    first_gil_cycles = math.ceil((MAX_GIL - current_gil) / GIL_PROFIT_PER_CYCLE)
-    first_iter_est_s = first_gil_cycles * GIL_SECONDS_PER_CYCLE + stat_farm_est_s + item_use_est_s + NAV_OVERHEAD_S
+for p_idx in range(total_iterations):
+    tc = math.ceil(plan_remaining / items_per_cycle)
+    fr = tc // STAT_CYCLES
+    lc = tc % STAT_CYCLES
+    trn = fr + (1 if lc > 0 else 0)
 
-if total_iterations == 1:
-    total_est_s = first_iter_est_s
-else:
-    total_est_s = first_iter_est_s + (total_iterations - 1) * subsequent_iter_est_s
+    p_runs = min(trn, max_runs_per_exec)
+    if p_runs == trn and lc > 0:
+        p_lrc = lc
+        p_items = (p_runs - 1) * items_per_full_run + lc * items_per_cycle
+    else:
+        p_lrc = STAT_CYCLES
+        p_items = p_runs * items_per_full_run
 
+    p_gil_est = estimate_gil_farm_seconds(plan_gil)
+    p_gil_cy = math.ceil((MAX_GIL - plan_gil) / GIL_PROFIT_PER_CYCLE) if plan_gil < MAX_GIL else 0
+    p_nav_gs = NAV_GIL_TO_STAT_S if plan_gil < MAX_GIL else 0
+    p_stat_est = estimate_stat_farm_seconds(p_runs, p_lrc)
+    p_item_est = estimate_item_usage_seconds(p_items)
+    p_nav_ig = NAV_ITEMS_TO_GIL_S if (plan_remaining - p_items) > 0 else 0
+    p_total = p_gil_est + p_nav_gs + p_stat_est + p_item_est + p_nav_ig
+
+    execution_plan.append({
+        'runs': p_runs, 'last_run_cycles': p_lrc, 'items': p_items,
+        'gil_est': p_gil_est, 'gil_cycles': p_gil_cy,
+        'stat_est': p_stat_est, 'item_est': p_item_est,
+        'nav_total': p_nav_gs + p_nav_ig, 'total': p_total,
+    })
+
+    plan_remaining -= p_items
+    plan_gil = MAX_GIL - p_runs * STAT_COST_PER_RUN
+
+total_est_s = sum(p['total'] for p in execution_plan)
 estimated_duration = timedelta(seconds=total_est_s)
 
 # --- CONFIGURATION SUMMARY ---
@@ -640,16 +720,27 @@ log_line("Current base stat:", f"{base_stat:,}")
 log_line("Target stat:", f"{stat['max_stat']:,}")
 log_line("Stat deficit:", f"{stat_deficit:,}")
 log_line(f"{stat['stat_up']}s needed:", f"{items_needed:,}")
-log_line("Items per cycle:", str(items_per_cycle))
-log_line("Items per full run:", str(items_per_full_run))
-log_line("Max runs per execution:", str(max_runs_per_exec))
-log_line("Max items per execution:", str(max_items_per_exec))
-log_line("Max gil cost per exec:", f"{max_gil_cost_per_exec:,}")
 log_line("Total iterations:", str(total_iterations))
 log_line("Current gil:", f"{current_gil:,}")
 log_line("Starting phase:", "Stat Farm" if has_max_gil else "Gil Farm")
+print("==========================================")
+
+# --- EXECUTION PLAN ---
+print("Execution Plan")
+for p_idx, p in enumerate(execution_plan):
+    print("------------------------------------------")
+    log_line(f"Iteration {p_idx + 1}/{total_iterations}:", format_estimate(p['total']))
+    if p['gil_est'] > 0:
+        log_line(f"  Gil Farm ({p['gil_cycles']} cycles):", format_estimate(p['gil_est']))
+    if p['last_run_cycles'] < STAT_CYCLES:
+        runs_desc = f"{p['runs']} runs, last: {p['last_run_cycles']} cy"
+    else:
+        runs_desc = f"{p['runs']} runs"
+    log_line(f"  Stat Farm ({runs_desc}):", format_estimate(p['stat_est']))
+    nav_item_s = p['item_est'] + p['nav_total']
+    log_line(f"  Items + Nav ({p['items']}x):", format_estimate(nav_item_s))
 print("------------------------------------------")
-log_line("Estimated duration:", str(estimated_duration))
+log_line("Total estimated:", format_estimate(total_est_s))
 print("==========================================")
 
 if has_max_gil:
@@ -669,7 +760,7 @@ estimated_finish_time = start_time + estimated_duration
 print("==========================================")
 print(f"{stat['stat_up']} Maxing Script Started")
 log_line("Start time:", start_time.strftime("%Y-%m-%d %H:%M:%S %Z"))
-log_line("Estimated duration:", str(estimated_duration))
+log_line("Estimated duration:", format_estimate(total_est_s))
 log_line("Estimated finish:", estimated_finish_time.strftime("%Y-%m-%d %H:%M:%S %Z"))
 print("==========================================")
 
@@ -698,6 +789,7 @@ for iteration in range(1, total_iterations + 1):
         items_this_iter = runs_this_iter * items_per_full_run
 
     gil_cost_this_iter = runs_this_iter * STAT_COST_PER_RUN
+    plan = execution_plan[iteration - 1]
 
     # --- ITERATION HEADER ---
     elapsed_so_far = timedelta(seconds=(iter_start_mono - run_start_monotonic))
@@ -710,12 +802,16 @@ for iteration in range(1, total_iterations + 1):
         log_line("  Runs:", f"{runs_this_iter} ({runs_this_iter - 1} full + 1×{last_run_cycles} cycles)")
     else:
         log_line("  Runs:", f"{runs_this_iter} (all full)")
+    log_line("  Iteration ETA:", format_estimate(plan['total']))
     log_line("  Elapsed:", format_elapsed(elapsed_so_far))
     if iteration > 1:
-        avg_iter_s = sum(iteration_times) / len(iteration_times)
-        eta_remaining = timedelta(seconds=avg_iter_s * (total_iterations - iteration + 1))
-        eta_finish = datetime.now().astimezone() + eta_remaining
-        log_line("  ETA remaining:", str(eta_remaining))
+        planned_so_far = sum(execution_plan[i]['total'] for i in range(iteration - 1))
+        actual_so_far = sum(iteration_times)
+        correction = actual_so_far / planned_so_far if planned_so_far > 0 else 1
+        remaining_plan_s = sum(execution_plan[i]['total'] for i in range(iteration - 1, total_iterations))
+        adjusted_s = remaining_plan_s * correction
+        eta_finish = datetime.now().astimezone() + timedelta(seconds=adjusted_s)
+        log_line("  ETA remaining:", format_estimate(adjusted_s))
         log_line("  ETA finish:", eta_finish.strftime("%Y-%m-%d %H:%M:%S %Z"))
     print("==========================================")
 
@@ -724,7 +820,7 @@ for iteration in range(1, total_iterations + 1):
         if current_gil < GIL_MIN_START:
             print(f"ERROR: Insufficient gil ({current_gil:,}). Need at least {GIL_MIN_START:,}.")
             raise SystemExit
-        print("[Gil Farm] Farming to max gil...")
+        print(f"[Gil Farm] Farming to max gil... (ETA: {format_estimate(plan['gil_est'])})")
         run_gil_farm(current_gil, run_start_monotonic)
         current_gil = MAX_GIL
 
@@ -732,7 +828,7 @@ for iteration in range(1, total_iterations + 1):
         navigate_gil_farm_to_stat_farm()
 
     # --- STAT FARM ---
-    print("[Stat Farm] Farming stat-up items...")
+    print(f"[Stat Farm] Farming stat-up items... (ETA: {format_estimate(plan['stat_est'])})")
     run_stat_up_farm(stat_choice, stat, runs_this_iter, run_start_monotonic, last_run_cycles)
     current_gil -= gil_cost_this_iter
 
@@ -756,15 +852,20 @@ for iteration in range(1, total_iterations + 1):
     elapsed = timedelta(seconds=(iter_end_mono - run_start_monotonic))
     remaining_iters = total_iterations - iteration
 
+    plan_est_s = plan['total']
+    iter_delta = iter_seconds - plan_est_s
+
     print("------------------------------------------")
-    log_line(f"Iteration {iteration} complete:", f"{iter_seconds:.2f}s")
+    log_line(f"Iteration {iteration} complete:", f"{iter_seconds:.2f}s (estimated {format_estimate(plan_est_s)})")
     log_line("  Elapsed:", format_elapsed(elapsed))
     if remaining_iters > 0:
-        avg_iter_s = sum(iteration_times) / len(iteration_times)
-        eta_remaining = timedelta(seconds=avg_iter_s * remaining_iters)
-        eta_finish = datetime.now().astimezone() + eta_remaining
+        remaining_plan_s = sum(execution_plan[i]['total'] for i in range(iteration, total_iterations))
+        correction = iter_delta / plan_est_s if plan_est_s > 0 else 0
+        adjusted_remaining_s = remaining_plan_s * (1 + correction)
+        eta_remaining_s = max(0, adjusted_remaining_s)
+        eta_finish = datetime.now().astimezone() + timedelta(seconds=eta_remaining_s)
         log_line("  Remaining iterations:", str(remaining_iters))
-        log_line("  ETA remaining:", str(eta_remaining))
+        log_line("  ETA remaining:", format_estimate(eta_remaining_s))
         log_line("  ETA finish:", eta_finish.strftime("%Y-%m-%d %H:%M:%S %Z"))
     print("------------------------------------------")
 
@@ -787,7 +888,7 @@ log_line("Start time:", start_time.strftime("%Y-%m-%d %H:%M:%S %Z"))
 log_line("Finish time:", end_time.strftime("%Y-%m-%d %H:%M:%S %Z"))
 log_line("Actual duration:", str(actual_duration))
 print("------------------------------------------")
-log_line("Estimated duration:", str(estimated_duration))
+log_line("Estimated duration:", format_estimate(total_est_s))
 log_line("Estimated finish:", estimated_finish_time.strftime("%Y-%m-%d %H:%M:%S %Z"))
 log_line("Estimate error:", format_eta_error(delta))
 print("==========================================")

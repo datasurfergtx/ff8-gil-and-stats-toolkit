@@ -80,6 +80,11 @@ STAT_OPTIONS = {
 LABEL_W = 26
 
 
+def format_timestamp(dt: datetime) -> str:
+    tz_abbr = "".join(w[0] for w in dt.strftime("%Z").split())
+    return dt.strftime("%Y-%m-%d %H:%M:%S ") + tz_abbr
+
+
 def log_line(label: str, value: str = "") -> None:
     print(f"{label:<{LABEL_W}} {value}")
 
@@ -225,12 +230,12 @@ estimated_finish_time = start_time + estimated_duration
 print("==========================================")
 print(f"{stat['stat_up']} Farming Script Started")
 log_line("Farming:", f"{stat['item']} → {stat['stat_up']}")
-log_line("Start Time:", start_time.strftime("%Y-%m-%d %H:%M:%S %Z"))
+log_line("Start Time:", format_timestamp(start_time))
 print("------------------------------------------")
 log_line("Runs:", str(outer_loops))
 log_line("Cycles per run:", str(CYCLES))
 log_line("Estimated duration:", str(estimated_duration))
-log_line("Estimated finish time:", estimated_finish_time.strftime("%Y-%m-%d %H:%M:%S %Z"))
+log_line("Estimated finish time:", format_timestamp(estimated_finish_time))
 print("==========================================")
 
 print(f"Click into FF8 now. Starting in {FOCUS_GRACE_SECONDS} seconds...")
@@ -386,10 +391,10 @@ delta = end_time - estimated_finish_time
 
 print("==========================================")
 print(f"{stat['stat_up']} Farming Script Finished")
-log_line("Finish Time:", end_time.strftime("%Y-%m-%d %H:%M:%S %Z"))
+log_line("Finish Time:", format_timestamp(end_time))
 log_line("Actual duration:", str(actual_duration))
 print("------------------------------------------")
 log_line("Estimated duration:", str(estimated_duration))
-log_line("Estimated finish time:", estimated_finish_time.strftime("%Y-%m-%d %H:%M:%S %Z"))
+log_line("Estimated finish time:", format_timestamp(estimated_finish_time))
 log_line("Estimate error:", format_eta_error(delta))
 print("==========================================")

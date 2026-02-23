@@ -63,6 +63,11 @@ MIN_START_GIL = 210_000  # required to buy 100x Cottages + 100x Tents per cycle
 LABEL_W = 26  # one place to control alignment
 
 
+def format_timestamp(dt: datetime) -> str:
+    tz_abbr = "".join(w[0] for w in dt.strftime("%Z").split())
+    return dt.strftime("%Y-%m-%d %H:%M:%S ") + tz_abbr
+
+
 def log_line(label: str, value: str = "") -> None:
     print(f"{label:<{LABEL_W}} {value}")
 
@@ -179,7 +184,7 @@ def get_current_gil_raw(max_gil: int) -> int:
 start_time = datetime.now().astimezone()
 print("==========================================")
 print("Mega Potion Farming Script Started")
-log_line("Start Time:", start_time.strftime("%Y-%m-%d %H:%M:%S %Z"))
+log_line("Start Time:", format_timestamp(start_time))
 print("==========================================")
 
 # ----------------------------
@@ -211,7 +216,7 @@ log_line("Remaining to cap:", f"{remaining:,} gil")
 log_line("Profit per cycle:", f"{PROFIT_PER_CYCLE:,} gil")
 log_line("Cycles to run:", str(cycles))
 log_line("Estimated duration:", str(estimated_duration))
-log_line("Estimated finish time:", estimated_finish_time.strftime("%Y-%m-%d %H:%M:%S %Z"))
+log_line("Estimated finish time:", format_timestamp(estimated_finish_time))
 log_line("Projected end gil:", f"{estimated_end_gil:,} gil")
 log_line("Projected over cap:", f"{projected_over_cap:,} gil")
 print("------------------------------------------")
@@ -351,10 +356,10 @@ delta = end_time - estimated_finish_time  # + = finished later than ETA; - = ear
 
 print("==========================================")
 print("Mega Potion Farming Script Finished")
-log_line("Finish Time:", end_time.strftime("%Y-%m-%d %H:%M:%S %Z"))
+log_line("Finish Time:", format_timestamp(end_time))
 log_line("Actual duration:", str(actual_duration))
 print("------------------------------------------")
 log_line("Estimated duration:", str(estimated_duration))
-log_line("Estimated finish time:", estimated_finish_time.strftime("%Y-%m-%d %H:%M:%S %Z"))
+log_line("Estimated finish time:", format_timestamp(estimated_finish_time))
 log_line("Estimate error:", format_eta_error(delta))
 print("==========================================")

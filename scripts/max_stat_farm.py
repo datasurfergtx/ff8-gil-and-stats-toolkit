@@ -149,6 +149,11 @@ LABEL_W = 30
 TAG_W = 13
 
 
+def format_timestamp(dt: datetime) -> str:
+    tz_abbr = "".join(w[0] for w in dt.strftime("%Z").split())
+    return dt.strftime("%Y-%m-%d %H:%M:%S ") + tz_abbr
+
+
 def log_line(label: str, value: str = "", width: int = LABEL_W) -> None:
     print(f"{label:<{width}} {value}")
 
@@ -427,19 +432,22 @@ def run_gil_farm(current_gil, run_start_monotonic):
 # Ending state:   Abilities menu, inside Forbid Med-RF (after final refine)
 # ====================================================================
 def run_stat_up_farm(stat, num_runs, run_start_monotonic, last_run_cycles=STAT_CYCLES):
+    run_word = "run" if num_runs == 1 else "runs"
     if last_run_cycles < STAT_CYCLES:
+        cycle_word = "cycle" if last_run_cycles == 1 else "cycles"
         print(
             f"  Stat farm: {stat['item']} → {stat['stat_up']} "
-            f"({num_runs} run(s), last run: {last_run_cycles} cycle(s))"
+            f"({num_runs} {run_word}, {last_run_cycles} {cycle_word})"
         )
     else:
-        print(f"  Stat farm: {stat['item']} → {stat['stat_up']} ({num_runs} run(s))")
+        print(f"  Stat farm: {stat['item']} → {stat['stat_up']} ({num_runs} {run_word})")
 
     for run in range(num_runs):
         cycles_this_run = last_run_cycles if run == num_runs - 1 else STAT_CYCLES
 
         if num_runs > 1:
-            print(f"  --- Stat Run {run + 1}/{num_runs} ({cycles_this_run} cycles) ---")
+            cw = "cycle" if cycles_this_run == 1 else "cycles"
+            print(f"  --- Stat Run {run + 1}/{num_runs} ({cycles_this_run} {cw}) ---")
 
         # PHASE 1 — SHOP + GFAbl Med-RF LOOP
         for cycle in range(1, cycles_this_run + 1):
@@ -803,9 +811,12 @@ for p_idx, p in enumerate(execution_plan):
     if p['gil_est'] > 0:
         log_line(f"  Gil Farm ({p['gil_cycles']} cycles):", format_estimate(p['gil_est']), PLAN_W)
     if p['runs'] == 1 and p['last_run_cycles'] < STAT_CYCLES:
-        runs_desc = f"1 run, {p['last_run_cycles']} cycles"
+        c = p['last_run_cycles']
+        runs_desc = f"1 run, {c} {'cycle' if c == 1 else 'cycles'}"
     elif p['last_run_cycles'] < STAT_CYCLES:
-        runs_desc = f"{p['runs'] - 1} runs + {p['last_run_cycles']} cycles"
+        c = p['last_run_cycles']
+        r = p['runs'] - 1
+        runs_desc = f"{r} {'run' if r == 1 else 'runs'} + {c} {'cycle' if c == 1 else 'cycles'}"
     elif p['runs'] == 1:
         runs_desc = "1 run"
     else:
@@ -833,8 +844,8 @@ estimated_finish_time = start_time + estimated_duration
 
 print("==========================================")
 print(f"{stat['stat_up']} Maxing Script Started")
-log_line("Start time:", start_time.strftime("%Y-%m-%d %H:%M:%S %Z"))
-log_line("Estimated finish:", estimated_finish_time.strftime("%Y-%m-%d %H:%M:%S %Z"))
+log_line("Start time:", format_timestamp(start_time))
+log_line("Estimated finish:", format_timestamp(estimated_finish_time))
 log_line("Estimated duration:", format_estimate(total_est_s))
 print("==========================================")
 
@@ -873,9 +884,12 @@ for iteration in range(1, total_iterations + 1):
     log_line("  Items this iteration:", str(items_this_iter))
     log_line("  Items remaining after:", str(max(0, remaining_items - items_this_iter)))
     if runs_this_iter == 1 and last_run_cycles < STAT_CYCLES:
-        log_line("  Runs:", f"1 run, {last_run_cycles} cycles")
+        c = last_run_cycles
+        log_line("  Runs:", f"1 run, {c} {'cycle' if c == 1 else 'cycles'}")
     elif last_run_cycles < STAT_CYCLES:
-        log_line("  Runs:", f"{runs_this_iter - 1} runs + {last_run_cycles} cycles")
+        r = runs_this_iter - 1
+        c = last_run_cycles
+        log_line("  Runs:", f"{r} {'run' if r == 1 else 'runs'} + {c} {'cycle' if c == 1 else 'cycles'}")
     elif runs_this_iter == 1:
         log_line("  Runs:", "1 run")
     else:
@@ -890,7 +904,7 @@ for iteration in range(1, total_iterations + 1):
         adjusted_s = remaining_plan_s * correction
         eta_finish = datetime.now().astimezone() + timedelta(seconds=adjusted_s)
         log_line("  ETA remaining:", format_estimate(adjusted_s))
-        log_line("  ETA finish:", eta_finish.strftime("%Y-%m-%d %H:%M:%S %Z"))
+        log_line("  ETA finish:", format_timestamp(eta_finish))
     print("==========================================")
 
     # --- GIL FARM (if not at max gil) ---
@@ -944,7 +958,7 @@ for iteration in range(1, total_iterations + 1):
         eta_finish = datetime.now().astimezone() + timedelta(seconds=eta_remaining_s)
         log_line("  Remaining iterations:", str(remaining_iters))
         log_line("  ETA remaining:", format_estimate(eta_remaining_s))
-        log_line("  ETA finish:", eta_finish.strftime("%Y-%m-%d %H:%M:%S %Z"))
+        log_line("  ETA finish:", format_timestamp(eta_finish))
     print("------------------------------------------")
 
 # ====================================================================
@@ -962,8 +976,8 @@ log_line("Stat maxed:", f"{stat_label} → {stat['max_stat']:,}")
 log_line("Total items used:", f"{items_needed:,}")
 log_line("Total iterations:", str(total_iterations))
 print("------------------------------------------")
-log_line("Start:", start_time.strftime("%Y-%m-%d %H:%M:%S %Z"))
-log_line("Finish:", end_time.strftime("%Y-%m-%d %H:%M:%S %Z"))
+log_line("Start:", format_timestamp(start_time))
+log_line("Finish:", format_timestamp(end_time))
 log_line("Duration:", f"{format_elapsed(actual_duration)} (estimated {format_estimate(total_est_s)})")
 log_line("Estimate error:", format_eta_error(delta, total_est_s))
 print("==========================================")

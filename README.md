@@ -15,11 +15,6 @@ It does **not** read or modify game memory.
 ## Demo
 
 https://github.com/user-attachments/assets/7c762880-ba03-4371-848c-aebf53ddaa39
-
-> To enable inline playback on GitHub: upload `assets/FINAL_FANTASY_VIII_REMASTERED_SAMPLE.mp4` to a [GitHub Issue](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/attaching-files) in this repo, then replace the placeholder URL above with the generated link.
->
-> [Download the demo clip directly](assets/FINAL_FANTASY_VIII_REMASTERED_SAMPLE.mp4)
-
 ---
 
 ## Scripts

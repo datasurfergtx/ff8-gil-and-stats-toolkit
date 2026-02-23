@@ -1,5 +1,5 @@
 # ==================================================================
-# max_stat_farm.py — v1.0 (2026-02-22)
+# max_stat_farm.py — v1.1 (2026-02-23)
 # ==================================================================
 # Automated stat maxing for a single FF8 character.
 # Combines gil_farm.py and stat_up_farm.py into a single workflow:
@@ -86,17 +86,17 @@ STAT_OPTIONS = {
         "items_per_cycle": 10, "max_runs": 1,
     },
     "str": {
-        "presses": 5, "item": "Power Wrist", "stat_up": "Str Up",
+        "presses": 3, "item": "Power Wrist", "stat_up": "Str Up",
         "max_stat": 255, "gain_per_item": 1,
         "items_per_cycle": 1, "max_runs": 6,
     },
     "vit": {
-        "presses": 6, "item": "Force Armlet", "stat_up": "Vit Up",
+        "presses": 2, "item": "Force Armlet", "stat_up": "Vit Up",
         "max_stat": 255, "gain_per_item": 1,
         "items_per_cycle": 1, "max_runs": 6,
     },
     "mag": {
-        "presses": 7, "item": "Hypno Crown", "stat_up": "Mag Up",
+        "presses": 1, "item": "Hypno Crown", "stat_up": "Mag Up",
         "max_stat": 255, "gain_per_item": 1,
         "items_per_cycle": 1, "max_runs": 6,
     },
@@ -106,61 +106,84 @@ STAT_OPTIONS = {
 # LOGGING HELPERS
 # ==================================================================
 LABEL_W = 30
+TAG_W = 13
 
 
-def log_line(label: str, value: str = "") -> None:
-    print(f"{label:<{LABEL_W}} {value}")
+def log_line(label: str, value: str = "", width: int = LABEL_W) -> None:
+    print(f"{label:<{width}} {value}")
 
 
 def format_elapsed(td: timedelta) -> str:
     total = td.total_seconds()
     if total < 0:
         total = 0.0
-
-    hours = int(total // 3600)
-    rem = total - hours * 3600
-    minutes = int(rem // 60)
-    rem = rem - minutes * 60
-
-    whole_seconds = int(rem)
-    micro = int(round((rem - whole_seconds) * 1_000_000))
-
-    if micro == 1_000_000:
-        whole_seconds += 1
-        micro = 0
-        if whole_seconds == 60:
-            minutes += 1
-            whole_seconds = 0
-        if minutes == 60:
-            hours += 1
-            minutes = 0
-
-    return f"{hours}:{minutes:02d}:{whole_seconds:02d}.{micro:06d}"
+    if total < 60:
+        return f"{total:.2f}s"
+    h = int(total // 3600)
+    m = int((total % 3600) // 60)
+    s = int(total % 60)
+    if h > 0:
+        return f"{h}hr {m}m {s}s" if s else (f"{h}hr {m}m" if m else f"{h}hr")
+    return f"{m}m {s}s" if s else f"{m}m"
 
 
-def format_eta_error(td) -> str:
+def format_eta_error(td, estimated_seconds: float = 0) -> str:
     total = td.total_seconds()
+    abs_err = abs(total)
 
-    if total == 0:
-        return "0:00.000000 on time"
+    if estimated_seconds < 120:
+        tolerance = 5
+    elif estimated_seconds <= 1800:
+        tolerance = estimated_seconds * 0.05
+    else:
+        tolerance = estimated_seconds * 0.03
+    tolerance = min(tolerance, 240)
+
+    if abs_err <= tolerance:
+        return "Exact"
 
     status = "late" if total > 0 else "early"
+    secs = abs_err
+    h = int(secs // 3600)
+    m = int((secs % 3600) // 60)
+    s = int(secs % 60)
+    if h > 0:
+        parts = f"{h}hr {m}m {s}s" if s else (f"{h}hr {m}m" if m else f"{h}hr")
+    elif m > 0:
+        parts = f"{m}m {s}s" if s else f"{m}m"
+    else:
+        parts = f"{s}s"
+    return f"{parts} {status}"
 
-    secs = abs(total)
-    minutes = int(secs // 60)
-    rem = secs - (minutes * 60)
 
-    whole_seconds = int(rem)
-    micro = int(round((rem - whole_seconds) * 1_000_000))
+def format_diff(seconds):
+    """Format a time difference as +/- with hr/m/s units."""
+    if abs(seconds) < 1.0:
+        return "Exact"
+    sign = "+" if seconds >= 0 else "-"
+    s = abs(seconds)
+    if s < 60:
+        return f"{sign}{s:.2f}s"
+    h = int(s // 3600)
+    m = int((s % 3600) // 60)
+    sec = int(s % 60)
+    if h > 0:
+        parts = f"{h}hr {m}m {sec}s" if sec else (f"{h}hr {m}m" if m else f"{h}hr")
+    else:
+        parts = f"{m}m {sec}s" if sec else f"{m}m"
+    return f"{sign}{parts}"
 
-    if micro == 1_000_000:
-        whole_seconds += 1
-        micro = 0
-        if whole_seconds == 60:
-            minutes += 1
-            whole_seconds = 0
 
-    return f"{minutes}:{whole_seconds:02d}.{micro:06d} {status}"
+def format_duration_short(seconds):
+    """Format seconds as 20.55s, 9m 52s, or 1hr 24m 32s."""
+    if seconds < 60:
+        return f"{seconds:.2f}s"
+    h = int(seconds // 3600)
+    m = int((seconds % 3600) // 60)
+    s = int(seconds % 60)
+    if h > 0:
+        return f"{h}hr {m}m {s}s" if s else (f"{h}hr {m}m" if m else f"{h}hr")
+    return f"{m}m {s}s" if s else f"{m}m"
 
 
 # ==================================================================
@@ -386,7 +409,7 @@ def run_stat_up_farm(stat_choice, stat, num_runs, run_start_monotonic, last_run_
             pdi.press('right')
             time.sleep(0.3)
             for i in range(stat["presses"]):
-                pdi.press('down')
+                pdi.press('up')
             pdi.press('enter')
             time.sleep(0.2)
             for i in range(10):
@@ -437,9 +460,10 @@ def run_stat_up_farm(stat_choice, stat, num_runs, run_start_monotonic, last_run_
             elapsed = timedelta(seconds=(cycle_end - run_start_monotonic))
 
             run_prefix = f"Run: {run + 1}/{num_runs} | " if num_runs > 1 else ""
+            event = f"St. Cycle: {cycle}/{cycles_this_run}"
             print(
-                f"  {run_prefix}"
-                f"Cycle: {cycle}/{cycles_this_run} ({cycle_seconds:.2f}s) | "
+                f"  {run_prefix}{event:<17}"
+                f"({cycle_seconds:.2f}s) | "
                 f"Elapsed: {format_elapsed(elapsed)}"
             )
 
@@ -464,9 +488,10 @@ def run_stat_up_farm(stat_choice, stat, num_runs, run_start_monotonic, last_run_
         elapsed = timedelta(seconds=(phase2_end - run_start_monotonic))
 
         run_prefix = f"Run: {run + 1}/{num_runs} | " if num_runs > 1 else ""
+        event = "St.Refine: 1/1"
         print(
-            f"  {run_prefix}"
-            f"Stat Ref: 1/1 ({phase2_seconds:.2f}s) | "
+            f"  {run_prefix}{event:<17}"
+            f"({phase2_seconds:.2f}s) | "
             f"Elapsed: {format_elapsed(elapsed)}"
         )
 
@@ -570,15 +595,22 @@ def navigate_item_usage_to_gil_farm():
 #                 highlighted, cursor on "Use" / Confirm.
 # Each item use = 2 confirm presses (confirm character + confirm usage).
 # ====================================================================
-def use_stat_items(count):
-    print(f"  Using {count}x stat-up items...")
+def use_stat_items(count, run_start_monotonic):
+    item_start = time.perf_counter()
+    elapsed_start = timedelta(seconds=(item_start - run_start_monotonic))
+    event = f"Using {count}x stat-up items..."
+    print(f"  {event:<40}| Elapsed: {format_elapsed(elapsed_start)}")
     original_pause = pdi.PAUSE
     pdi.PAUSE = 0.00000000001
     for i in range(count):
         pdi.press('enter')
         pdi.press('enter')
     pdi.PAUSE = original_pause
-    print(f"  Item usage complete ({count} used).")
+    item_end = time.perf_counter()
+    item_seconds = item_end - item_start
+    elapsed_end = timedelta(seconds=(item_end - run_start_monotonic))
+    event = f"Item usage complete ({count} used, {item_seconds:.2f}s)"
+    print(f"  {event:<40}| Elapsed: {format_elapsed(elapsed_end)}")
 
 
 # ====================================================================
@@ -718,7 +750,6 @@ log_line("Character:", f"{character_name} (position {character_position})")
 log_line("Stat:", stat['stat_up'])
 log_line("Current base stat:", f"{base_stat:,}")
 log_line("Target stat:", f"{stat['max_stat']:,}")
-log_line("Stat deficit:", f"{stat_deficit:,}")
 log_line(f"{stat['stat_up']}s needed:", f"{items_needed:,}")
 log_line("Total iterations:", str(total_iterations))
 log_line("Current gil:", f"{current_gil:,}")
@@ -726,21 +757,26 @@ log_line("Starting phase:", "Stat Farm" if has_max_gil else "Gil Farm")
 print("==========================================")
 
 # --- EXECUTION PLAN ---
+PLAN_W = 36
 print("Execution Plan")
 for p_idx, p in enumerate(execution_plan):
     print("------------------------------------------")
-    log_line(f"Iteration {p_idx + 1}/{total_iterations}:", format_estimate(p['total']))
+    log_line(f"Iteration {p_idx + 1}/{total_iterations}:", format_estimate(p['total']), PLAN_W)
     if p['gil_est'] > 0:
-        log_line(f"  Gil Farm ({p['gil_cycles']} cycles):", format_estimate(p['gil_est']))
-    if p['last_run_cycles'] < STAT_CYCLES:
-        runs_desc = f"{p['runs']} runs, last: {p['last_run_cycles']} cy"
+        log_line(f"  Gil Farm ({p['gil_cycles']} cycles):", format_estimate(p['gil_est']), PLAN_W)
+    if p['runs'] == 1 and p['last_run_cycles'] < STAT_CYCLES:
+        runs_desc = f"1 run, {p['last_run_cycles']} cycles"
+    elif p['last_run_cycles'] < STAT_CYCLES:
+        runs_desc = f"{p['runs'] - 1} runs + {p['last_run_cycles']} cycles"
+    elif p['runs'] == 1:
+        runs_desc = "1 run"
     else:
         runs_desc = f"{p['runs']} runs"
-    log_line(f"  Stat Farm ({runs_desc}):", format_estimate(p['stat_est']))
+    log_line(f"  Stat Farm ({runs_desc}):", format_estimate(p['stat_est']), PLAN_W)
     nav_item_s = p['item_est'] + p['nav_total']
-    log_line(f"  Items + Nav ({p['items']}x):", format_estimate(nav_item_s))
+    log_line(f"  Nav + Items ({p['items']}x):", format_estimate(nav_item_s), PLAN_W)
 print("------------------------------------------")
-log_line("Total estimated:", format_estimate(total_est_s))
+log_line("Total estimated:", format_estimate(total_est_s), PLAN_W)
 print("==========================================")
 
 if has_max_gil:
@@ -798,13 +834,17 @@ for iteration in range(1, total_iterations + 1):
     print(f"Iteration {iteration}/{total_iterations} — {stat['stat_up']} → {character_name}")
     log_line("  Items this iteration:", str(items_this_iter))
     log_line("  Items remaining after:", str(remaining_items - items_this_iter))
-    if last_run_cycles < STAT_CYCLES:
-        log_line("  Runs:", f"{runs_this_iter} ({runs_this_iter - 1} full + 1×{last_run_cycles} cycles)")
+    if runs_this_iter == 1 and last_run_cycles < STAT_CYCLES:
+        log_line("  Runs:", f"1 run, {last_run_cycles} cycles")
+    elif last_run_cycles < STAT_CYCLES:
+        log_line("  Runs:", f"{runs_this_iter - 1} runs + {last_run_cycles} cycles")
+    elif runs_this_iter == 1:
+        log_line("  Runs:", "1 run")
     else:
-        log_line("  Runs:", f"{runs_this_iter} (all full)")
+        log_line("  Runs:", f"{runs_this_iter} runs")
     log_line("  Iteration ETA:", format_estimate(plan['total']))
-    log_line("  Elapsed:", format_elapsed(elapsed_so_far))
     if iteration > 1:
+        log_line("  Elapsed:", format_elapsed(elapsed_so_far))
         planned_so_far = sum(execution_plan[i]['total'] for i in range(iteration - 1))
         actual_so_far = sum(iteration_times)
         correction = actual_so_far / planned_so_far if planned_so_far > 0 else 1
@@ -820,29 +860,29 @@ for iteration in range(1, total_iterations + 1):
         if current_gil < GIL_MIN_START:
             print(f"ERROR: Insufficient gil ({current_gil:,}). Need at least {GIL_MIN_START:,}.")
             raise SystemExit
-        print(f"[Gil Farm] Farming to max gil... (ETA: {format_estimate(plan['gil_est'])})")
+        print(f"{'[Gil Farm]':<{TAG_W}}Farming to max gil... (ETA: {format_estimate(plan['gil_est'])})")
         run_gil_farm(current_gil, run_start_monotonic)
         current_gil = MAX_GIL
 
-        print("[Navigate] Gil Farm → Stat Farm")
+        print(f"{'[Navigate]':<{TAG_W}}Gil Farm → Stat Farm")
         navigate_gil_farm_to_stat_farm()
 
     # --- STAT FARM ---
-    print(f"[Stat Farm] Farming stat-up items... (ETA: {format_estimate(plan['stat_est'])})")
+    print(f"{'[St. Farm]':<{TAG_W}}Farming stat-up items... (ETA: {format_estimate(plan['stat_est'])})")
     run_stat_up_farm(stat_choice, stat, runs_this_iter, run_start_monotonic, last_run_cycles)
     current_gil -= gil_cost_this_iter
 
     # --- ITEM USAGE ---
-    print(f"[Navigate] Stat Farm → Item Usage ({stat['stat_up']} on {character_name})")
+    print(f"{'[Navigate]':<{TAG_W}}Stat Farm → Item Use ({stat['stat_up']} on {character_name})")
     navigate_stat_farm_to_item_usage(character_position, stat['stat_up'], items_this_iter)
 
-    print(f"[Item Usage] Using {items_this_iter}x {stat['stat_up']} on {character_name}...")
-    use_stat_items(items_this_iter)
+    print(f"{'[Item Use]':<{TAG_W}}Using {items_this_iter}x {stat['stat_up']} on {character_name}... (ETA: {format_estimate(plan['item_est'])})")
+    use_stat_items(items_this_iter, run_start_monotonic)
     remaining_items -= items_this_iter
 
     # --- NAVIGATE BACK FOR NEXT ITERATION ---
     if remaining_items > 0:
-        print("[Navigate] Item Usage → Gil Farm")
+        print(f"{'[Navigate]':<{TAG_W}}Item Use → Gil Farm")
         navigate_item_usage_to_gil_farm()
 
     # --- ITERATION COMPLETE LOGGING ---
@@ -856,8 +896,8 @@ for iteration in range(1, total_iterations + 1):
     iter_delta = iter_seconds - plan_est_s
 
     print("------------------------------------------")
-    log_line(f"Iteration {iteration} complete:", f"{iter_seconds:.2f}s (estimated {format_estimate(plan_est_s)})")
-    log_line("  Elapsed:", format_elapsed(elapsed))
+    log_line(f"Iteration {iteration} complete:", f"{format_duration_short(iter_seconds)} (estimated {format_estimate(plan_est_s)})")
+    log_line("  Elapsed:", f"{format_elapsed(elapsed)} ({format_diff(iter_delta)})")
     if remaining_iters > 0:
         remaining_plan_s = sum(execution_plan[i]['total'] for i in range(iteration, total_iterations))
         correction = iter_delta / plan_est_s if plan_est_s > 0 else 0
@@ -890,5 +930,5 @@ log_line("Actual duration:", str(actual_duration))
 print("------------------------------------------")
 log_line("Estimated duration:", format_estimate(total_est_s))
 log_line("Estimated finish:", estimated_finish_time.strftime("%Y-%m-%d %H:%M:%S %Z"))
-log_line("Estimate error:", format_eta_error(delta))
+log_line("Estimate error:", format_eta_error(delta, total_est_s))
 print("==========================================")

@@ -2,43 +2,83 @@
 # max_stat_farm.py — v1.1 (2026-02-23)
 # ==================================================================
 # Automated stat maxing for a single FF8 character.
-# Combines gil_farm.py and stat_up_farm.py into a single workflow:
-#   1. Farm gil to 99,999,999 (if needed)
-#   2. Farm stat-up items via shop + ability refines
-#   3. Use stat-up items on target character
-#   4. Repeat until stat is maxed
+# Combines gil_farm.py and stat_up_farm.py
+# into a single end-to-end workflow that repeats until the chosen
+# stat reaches its maximum value.
+#
+# WORKFLOW (per iteration):
+#   1. Gil Farm  — Buy/sell Mega Potions to reach 99,999,999 gil
+#   2. St. Farm  — Buy shop items + GF ability refine into stat-ups
+#   3. Item Use  — Apply stat-up items to the target character
+#   4. Repeat until the stat is maxed
+#
+# SUPPORTED STATS:
+#   HP  — Giant's Ring  → HP Up  (max 9999, +30 per item)
+#   Str — Power Wrist   → Str Up (max 255,  +1 per item)
+#   Vit — Force Armlet  → Vit Up (max 255,  +1 per item)
+#   Mag — Hypno Crown   → Mag Up (max 255,  +1 per item)
+#
+# SUPPORTED CHARACTERS (position 1-6):
+#   Squall (1), Zell (2), Irvine (3),
+#   Quistis (4), Rinoa (5), Selphie (6)
+#
+# TERMINOLOGY:
+#   Cycle     — One loop through the shop buy menu + GF ability
+#               refinement. Each cycle yields a fixed number of
+#               stat-up items (e.g. 1 Str Up, 10 HP Up).
+#   Run       — A set of 10 cycles followed by a final stat
+#               refinement step (St.Refine). Costs 15,000,000 gil.
+#               A partial run has fewer than 10 cycles but still
+#               ends with St.Refine.
+#   Iteration — One complete pass through the full workflow:
+#               Gil Farm → St. Farm → Item Use.
+#               Each iteration contains up to max_runs runs
+#               (6 for Str/Vit/Mag, 1 for HP).
+#
+# YIELDS PER FULL ITERATION:
+#   HP:  1 run  × 10 cycles × 10 per cycle = 100 HP Up
+#   Str: 6 runs × 10 cycles ×  1 per cycle =  60 Str Up
+#   Vit: 6 runs × 10 cycles ×  1 per cycle =  60 Vit Up
+#   Mag: 6 runs × 10 cycles ×  1 per cycle =  60 Mag Up
+#
+# The script calculates the exact number of runs and cycles
+# needed based on the remaining stat deficit, so the final
+# iteration may perform a partial run to avoid waste.
 # ==================================================================
 
 # ==================================================================
 # DISCLAIMER / READ BEFORE RUNNING
 # ==================================================================
-# This script simulates keyboard inputs only. It does NOT read game memory,
-# detect screen state, or verify menus. It will blindly press keys based on
-# hard-coded assumptions.
+# This script simulates keyboard inputs only. It does NOT read game
+# memory, detect screen state, or verify menus. It will blindly
+# press keys based on hard-coded assumptions.
 #
-# If the game/menu state is not EXACTLY as expected, inputs can desync and may
-# cause unintended purchases, item loss, or other unwanted actions.
-# You must monitor the script while running and stop it if it desynchronizes.
+# If the game/menu state is not EXACTLY as expected, inputs can
+# desync and may cause unintended purchases, item loss, or other
+# unwanted actions. You must monitor the script while running and
+# stop it if it desynchronizes.
 #
 # Stop execution:
-# - Press CTRL + C in the terminal, or
-# - Close the terminal / end the Python process.
+#   - Press CTRL + C in the terminal, or
+#   - Close the terminal / end the Python process.
 #
-# By running this script, you accept full responsibility for the outcome.
-# If you are not comfortable reviewing and modifying Python code, do not use it.
+# By running this script, you accept full responsibility for the
+# outcome. If you are not comfortable reviewing and modifying
+# Python code, do not use it.
 # ==================================================================
 
 # ==================================================================
 # REQUIRED SETUP (before running)
 # ==================================================================
-# 1) Item menu: Page 1 must be COMPLETELY empty (keeps item ordering consistent).
+# 1) Item menu: Page 1 must be COMPLETELY empty (keeps item
+#    ordering consistent after refinements).
 # 2) Starting state depends on your current gil:
-#    - If you have max gil (99,999,999):
-#      Open Call Shop → Esthar Pet Shop → Buy menu, cursor on "G-Potion".
-#    - If you do NOT have max gil:
-#      Open Call Shop → Esthar Shop!!! → Buy menu, cursor on "Potion".
-# 3) Keep FF8 focused while running (do not alt-tab). Borderless Windowed
-#    is recommended.
+#    - Max gil (99,999,999):
+#      Call Shop → Esthar Pet Shop → Buy menu, cursor on "G-Potion"
+#    - Not max gil:
+#      Call Shop → Esthar Shop!!! → Buy menu, cursor on "Potion"
+# 3) Keep FF8 focused while running (do not alt-tab).
+#    Borderless Windowed is recommended.
 # ==================================================================
 
 import time

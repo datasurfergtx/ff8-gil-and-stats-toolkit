@@ -426,7 +426,7 @@ def run_gil_farm(current_gil, run_start_monotonic):
 # Starting state: Esthar Pet Shop → Buy menu, cursor on "G-Potion"
 # Ending state:   Abilities menu, inside Forbid Med-RF (after final refine)
 # ====================================================================
-def run_stat_up_farm(stat_choice, stat, num_runs, run_start_monotonic, last_run_cycles=STAT_CYCLES):
+def run_stat_up_farm(stat, num_runs, run_start_monotonic, last_run_cycles=STAT_CYCLES):
     if last_run_cycles < STAT_CYCLES:
         print(
             f"  Stat farm: {stat['item']} → {stat['stat_up']} "
@@ -624,8 +624,6 @@ def navigate_item_usage_to_gil_farm():
     time.sleep(0.65)
     pdi.press('enter')
     time.sleep(0.4)
-
-
 
 # ====================================================================
 # ITEM USAGE
@@ -909,7 +907,7 @@ for iteration in range(1, total_iterations + 1):
 
     # --- STAT FARM ---
     print(f"{'[St. Farm]':<{TAG_W}}Farming stat-up items... (ETA: {format_estimate(plan['stat_est'])})")
-    run_stat_up_farm(stat_choice, stat, runs_this_iter, run_start_monotonic, last_run_cycles)
+    run_stat_up_farm(stat, runs_this_iter, run_start_monotonic, last_run_cycles)
     current_gil -= gil_cost_this_iter
 
     # --- ITEM USAGE ---
@@ -964,11 +962,8 @@ log_line("Stat maxed:", f"{stat_label} → {stat['max_stat']:,}")
 log_line("Total items used:", f"{items_needed:,}")
 log_line("Total iterations:", str(total_iterations))
 print("------------------------------------------")
-log_line("Start time:", start_time.strftime("%Y-%m-%d %H:%M:%S %Z"))
-log_line("Finish time:", end_time.strftime("%Y-%m-%d %H:%M:%S %Z"))
-log_line("Actual duration:", str(actual_duration))
-print("------------------------------------------")
-log_line("Estimated duration:", format_estimate(total_est_s))
-log_line("Estimated finish:", estimated_finish_time.strftime("%Y-%m-%d %H:%M:%S %Z"))
+log_line("Start:", start_time.strftime("%Y-%m-%d %H:%M:%S %Z"))
+log_line("Finish:", end_time.strftime("%Y-%m-%d %H:%M:%S %Z"))
+log_line("Duration:", f"{format_elapsed(actual_duration)} (estimated {format_estimate(total_est_s)})")
 log_line("Estimate error:", format_eta_error(delta, total_est_s))
 print("==========================================")

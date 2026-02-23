@@ -834,8 +834,8 @@ estimated_finish_time = start_time + estimated_duration
 print("==========================================")
 print(f"{stat['stat_up']} Maxing Script Started")
 log_line("Start time:", start_time.strftime("%Y-%m-%d %H:%M:%S %Z"))
-log_line("Estimated duration:", format_estimate(total_est_s))
 log_line("Estimated finish:", estimated_finish_time.strftime("%Y-%m-%d %H:%M:%S %Z"))
+log_line("Estimated duration:", format_estimate(total_est_s))
 print("==========================================")
 
 # ====================================================================

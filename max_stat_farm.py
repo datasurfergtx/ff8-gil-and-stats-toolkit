@@ -871,7 +871,7 @@ for iteration in range(1, total_iterations + 1):
     print("==========================================")
     print(f"Iteration {iteration}/{total_iterations} — {stat['stat_up']} → {character_name}")
     log_line("  Items this iteration:", str(items_this_iter))
-    log_line("  Items remaining after:", str(remaining_items - items_this_iter))
+    log_line("  Items remaining after:", str(max(0, remaining_items - items_this_iter)))
     if runs_this_iter == 1 and last_run_cycles < STAT_CYCLES:
         log_line("  Runs:", f"1 run, {last_run_cycles} cycles")
     elif last_run_cycles < STAT_CYCLES:

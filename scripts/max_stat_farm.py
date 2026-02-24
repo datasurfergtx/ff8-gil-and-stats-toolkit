@@ -14,7 +14,7 @@
 #   5. Max Gil  — (Optional) Farm gil back to 99,999,999
 #
 # SUPPORTED STATS:
-#   HP  — Giant's Ring  → HP Up  (max 9999, +30 per item)
+#   HP  — Giant's Ring  → HP Up  (max 9999, +10 per item)
 #   Str — Power Wrist   → Str Up (max 255,  +1 per item)
 #   Vit — Force Armlet  → Vit Up (max 255,  +1 per item)
 #   Mag — Hypno Crown   → Mag Up (max 255,  +1 per item)
@@ -125,7 +125,7 @@ CHARACTERS = {
 STAT_OPTIONS = {
     "hp": {
         "presses": 4, "item": "Giant's Ring", "stat_up": "HP Up",
-        "max_stat": 9999, "gain_per_item": 30,
+        "max_stat": 9999, "gain_per_item": 10,
         "items_per_cycle": 10, "max_runs": 1,
     },
     "str": {

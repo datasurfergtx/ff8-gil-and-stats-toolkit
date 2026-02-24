@@ -14,7 +14,7 @@ It does **not** read or modify game memory.
 
 ## Demo
 
-https://github.com/user-attachments/assets/7c762880-ba03-4371-848c-aebf53ddaa39
+https://github.com/user-attachments/assets/e551b4b9-3dc4-447f-8a0c-cfa6298d97be
 
 ---
 

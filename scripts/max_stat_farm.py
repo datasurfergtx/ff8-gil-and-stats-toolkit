@@ -1,5 +1,5 @@
 # ==================================================================
-# max_stat_farm.py — v1.1 (2026-02-23)
+# max_stat_farm.py — v1.2 (2026-02-23)
 # ==================================================================
 # Automated stat maxing for a single FF8 character.
 # Combines gil_farm.py and stat_up_farm.py
@@ -11,6 +11,7 @@
 #   2. St. Farm  — Buy shop items + GF ability refine into stat-ups
 #   3. Item Use  — Apply stat-up items to the target character
 #   4. Repeat until the stat is maxed
+#   5. Max Gil  — (Optional) Farm gil back to 99,999,999
 #
 # SUPPORTED STATS:
 #   HP  — Giant's Ring  → HP Up  (max 9999, +30 per item)
@@ -27,7 +28,8 @@
 #               refinement. Each cycle yields a fixed number of
 #               stat-up items (e.g. 1 Str Up, 10 HP Up).
 #   Run       — A set of 10 cycles followed by a final stat
-#               refinement step (St.Refine). Costs 15,000,000 gil.
+#               refinement step (St.Refine). Each cycle costs
+#               1,500,000 gil (10 cycles = 15,000,000 per run).
 #               A partial run has fewer than 10 cycles but still
 #               ends with St.Refine.
 #   Iteration — One complete pass through the full workflow:
@@ -102,7 +104,8 @@ GIL_MIN_START = 210_000
 
 # Stat farm
 STAT_CYCLES = 10
-STAT_COST_PER_RUN = 15_000_000
+STAT_COST_PER_CYCLE = 1_500_000
+STAT_COST_PER_RUN = STAT_COST_PER_CYCLE * STAT_CYCLES
 
 # Time estimates (calibrated from actual runs)
 STAT_CYCLE_RETURN_S = 9.35
@@ -313,6 +316,15 @@ def estimate_gil_farm_seconds(current_gil_amount):
 def estimate_item_usage_seconds(num_items):
     """Estimate seconds for navigation to item menu + using items."""
     return NAV_STAT_TO_ITEMS_BASE_S + num_items * NAV_STAT_TO_ITEMS_PER_ITEM_S
+
+
+def calculate_stat_farm_cost(num_runs, last_run_cycles):
+    """Calculate exact gil cost for stat farming, accounting for partial runs."""
+    if num_runs <= 0:
+        return 0
+    if last_run_cycles < STAT_CYCLES:
+        return (num_runs - 1) * STAT_COST_PER_RUN + last_run_cycles * STAT_COST_PER_CYCLE
+    return num_runs * STAT_COST_PER_RUN
 
 
 # ====================================================================
@@ -748,6 +760,20 @@ while True:
 
 has_max_gil = current_gil >= MAX_GIL
 
+# --- MAX GIL OPTION ---
+print("------------------------------------------")
+print("Max your gil after stat farming is complete?")
+print("------------------------------------------")
+while True:
+    choice = input("Max gil when done? (y/n): ").strip().lower()
+    if choice in ("y", "yes"):
+        max_gil_when_done = True
+        break
+    elif choice in ("n", "no"):
+        max_gil_when_done = False
+        break
+    print("Enter y or n.")
+
 # --- BUILD EXECUTION PLAN ---
 execution_plan = []
 plan_remaining = items_needed
@@ -783,9 +809,20 @@ for p_idx in range(total_iterations):
     })
 
     plan_remaining -= p_items
-    plan_gil = MAX_GIL - p_runs * STAT_COST_PER_RUN
+    plan_gil = MAX_GIL - calculate_stat_farm_cost(p_runs, p_lrc)
 
-total_est_s = sum(p['total'] for p in execution_plan)
+stat_farm_est_s = sum(p['total'] for p in execution_plan)
+total_est_s = stat_farm_est_s
+
+last_plan = execution_plan[-1]
+ending_gil_est = MAX_GIL - calculate_stat_farm_cost(last_plan['runs'], last_plan['last_run_cycles'])
+max_gil_deficit = MAX_GIL - ending_gil_est
+max_gil_farm_cycles = math.ceil(max_gil_deficit / GIL_PROFIT_PER_CYCLE)
+max_gil_farm_est_s = max_gil_farm_cycles * GIL_SECONDS_PER_CYCLE + NAV_ITEMS_TO_GIL_S
+
+if max_gil_when_done:
+    total_est_s += max_gil_farm_est_s
+
 estimated_duration = timedelta(seconds=total_est_s)
 
 # --- CONFIGURATION SUMMARY ---
@@ -800,6 +837,7 @@ log_line(f"{stat['stat_up']}s needed:", f"{items_needed:,}")
 log_line("Total iterations:", str(total_iterations))
 log_line("Current gil:", f"{current_gil:,}")
 log_line("Starting phase:", "Stat Farm" if has_max_gil else "Gil Farm")
+log_line("Max gil when done:", "Yes" if max_gil_when_done else "No")
 print("==========================================")
 
 # --- EXECUTION PLAN ---
@@ -824,6 +862,10 @@ for p_idx, p in enumerate(execution_plan):
     log_line(f"  Stat Farm ({runs_desc}):", format_estimate(p['stat_est']), PLAN_W)
     nav_item_s = p['item_est'] + p['nav_total']
     log_line(f"  Nav + Items ({p['items']}x):", format_estimate(nav_item_s), PLAN_W)
+if max_gil_when_done:
+    print("------------------------------------------")
+    log_line(f"Max Gil Farm ({max_gil_farm_cycles} cycles):",
+             format_estimate(max_gil_farm_est_s), PLAN_W)
 print("------------------------------------------")
 log_line("Total estimated:", format_estimate(total_est_s), PLAN_W)
 print("==========================================")
@@ -873,7 +915,7 @@ for iteration in range(1, total_iterations + 1):
         last_run_cycles = STAT_CYCLES
         items_this_iter = runs_this_iter * items_per_full_run
 
-    gil_cost_this_iter = runs_this_iter * STAT_COST_PER_RUN
+    gil_cost_this_iter = calculate_stat_farm_cost(runs_this_iter, last_run_cycles)
     plan = execution_plan[iteration - 1]
 
     # --- ITERATION HEADER ---
@@ -966,7 +1008,7 @@ for iteration in range(1, total_iterations + 1):
 # ====================================================================
 end_time = datetime.now().astimezone()
 actual_duration = end_time - start_time
-delta = end_time - estimated_finish_time
+stat_delta = end_time - (start_time + timedelta(seconds=stat_farm_est_s))
 
 print("==========================================")
 print(f"{stat['stat_up']} Maxing Complete!")
@@ -975,9 +1017,45 @@ log_line("Character:", character_name)
 log_line("Stat maxed:", f"{stat_label} → {stat['max_stat']:,}")
 log_line("Total items used:", f"{items_needed:,}")
 log_line("Total iterations:", str(total_iterations))
+log_line("Estimated gil remaining:", f"{current_gil:,}")
 print("------------------------------------------")
 log_line("Start:", format_timestamp(start_time))
 log_line("Finish:", format_timestamp(end_time))
-log_line("Duration:", f"{format_elapsed(actual_duration)} (estimated {format_estimate(total_est_s)})")
-log_line("Estimate error:", format_eta_error(delta, total_est_s))
+log_line("Duration:", f"{format_elapsed(actual_duration)} (estimated {format_estimate(stat_farm_est_s)})")
+log_line("Estimate error:", format_eta_error(stat_delta, stat_farm_est_s))
 print("==========================================")
+
+# ====================================================================
+# MAX GIL FARM
+# ====================================================================
+if max_gil_when_done and current_gil < MAX_GIL:
+    gil_farm_start_mono = time.perf_counter()
+
+    print(f"{'[Navigate]':<{TAG_W}}Item Use → Gil Farm")
+    navigate_item_usage_to_gil_farm()
+
+    print(f"{'[Gil Farm]':<{TAG_W}}Farming to max gil... (ETA: {format_estimate(max_gil_farm_est_s)})")
+    run_gil_farm(current_gil, run_start_monotonic)
+
+    gil_farm_end_mono = time.perf_counter()
+    gil_farm_actual_s = gil_farm_end_mono - gil_farm_start_mono
+
+    final_end_time = datetime.now().astimezone()
+    total_duration = final_end_time - start_time
+    total_delta = final_end_time - estimated_finish_time
+
+    print("==========================================")
+    print("All Tasks Complete!")
+    print("------------------------------------------")
+    log_line("Gil:", f"{current_gil:,} → {MAX_GIL:,}")
+    log_line("Gil farm duration:",
+             f"{format_duration_short(gil_farm_actual_s)} "
+             f"(estimated {format_estimate(max_gil_farm_est_s)})")
+    print("------------------------------------------")
+    log_line("Start:", format_timestamp(start_time))
+    log_line("Finish:", format_timestamp(final_end_time))
+    log_line("Total duration:",
+             f"{format_elapsed(total_duration)} "
+             f"(estimated {format_estimate(total_est_s)})")
+    log_line("Estimate error:", format_eta_error(total_delta, total_est_s))
+    print("==========================================")
